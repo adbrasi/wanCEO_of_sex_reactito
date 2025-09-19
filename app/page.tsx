@@ -85,9 +85,9 @@ export default function Home() {
       const imageBase64 = await fileToBase64(selectedImage);
       const thumbnail = await createThumbnail(imageBase64);
 
-      // Create all batch items at once
-      const batchPromises = [];
-
+      // Create all batch items at once for UI
+      const historyItems: Array<{ id: string; seed: number }> = [];
+      
       for (let i = 0; i < batchSize; i++) {
         // Generate unique seed for each batch item
         const seed = Math.floor(Math.random() * 1000000) + i * 1000;
@@ -107,8 +107,20 @@ export default function Home() {
         };
 
         addToHistory(historyItem);
+        historyItems.push({ id: historyId, seed });
+      }
 
-        // Submit jobs in parallel for better scaling
+      // Submit jobs with delay to avoid Modal file locking issues
+      const batchPromises = [];
+      
+      for (let i = 0; i < historyItems.length; i++) {
+        const { id: historyId, seed } = historyItems[i];
+        
+        // Add delay between submissions (except for first one)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const jobPromise = submitJob(
           imageBase64,
           prompt,
