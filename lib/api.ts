@@ -42,9 +42,14 @@ export async function submitJob(
 ): Promise<string> {
   const workflow = await loadWorkflow();
 
-  // Update workflow with seed
-  if (workflow['3'] && workflow['3'].inputs) {
-    workflow['3'].inputs.seed = seed;
+  // Update workflow with seed for all seed nodes
+  // Node 27 has the main seed
+  if (workflow['27'] && workflow['27'].inputs) {
+    workflow['27'].inputs.seed = seed;
+  }
+  // Node 90 also has a seed
+  if (workflow['90'] && workflow['90'].inputs) {
+    workflow['90'].inputs.seed = seed;
   }
 
   const submission: JobSubmission = {

@@ -89,8 +89,8 @@ export default function Home() {
       const historyItems: Array<{ id: string; seed: number }> = [];
       
       for (let i = 0; i < batchSize; i++) {
-        // Generate unique seed for each batch item
-        const seed = Math.floor(Math.random() * 1000000) + i * 1000;
+        // Generate unique seed for each batch item (1 to 999999)
+        const seed = Math.floor(Math.random() * 999999) + 1;
         const historyId = `${Date.now()}-${i}`;
 
         const historyItem: GenerationHistory = {
