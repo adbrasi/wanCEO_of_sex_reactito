@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Video Generator App
 
-## Getting Started
+A Next.js application for generating AI-powered videos using ComfyUI workflows through Modal API.
 
-First, run the development server:
+## Features
 
+- Upload images and generate animated videos
+- Customizable prompts and parameters
+- Batch processing support (generate multiple videos at once)
+- Resolution options: 768x768 or 1024x1024
+- Adjustable frame count
+- Visual history gallery with today/yesterday sections
+- Video player with fullscreen mode
+- Download generated videos
+- Progress tracking
+- Random seed generation for variations
+
+## Quick Start
+
+### Development
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
+```bash
+npm run build
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy to Vercel
 
-## Learn More
+1. Push to GitHub
+2. Import to Vercel
+3. Deploy with default settings
 
-To learn more about Next.js, take a look at the following resources:
+Or use Vercel CLI:
+```bash
+npm i -g vercel
+vercel
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How to Use
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Upload Image**: Click the upload area and select an image
+2. **Enter Prompt**: Describe the animation you want
+3. **Adjust Settings**:
+   - Resolution: Choose between 768x768 or 1024x1024
+   - Frames: Set the number of animation frames
+   - Batch Size: Generate multiple variations at once
+4. **Generate**: Click the generate button
+5. **View Results**: Videos appear in the history gallery below
 
-## Deploy on Vercel
+## API Configuration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app uses the ComfyUI API at:
+```
+https://cezarsaint--comfyui-saas-api-api.modal.run
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+No authentication required.
+
+## Tech Stack
+
+- Next.js 15 with Turbopack
+- React 19
+- TypeScript
+- Tailwind CSS
+- ComfyUI workflow integration
+
+## Notes
+
+- Videos are stored in browser localStorage
+- History shows today and yesterday's generations
+- Each batch request uses a random seed for variations
+- Progress is tracked in real-time during generation
