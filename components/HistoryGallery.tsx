@@ -83,9 +83,18 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
               {/* Status Overlays */}
               {item.status === 'pending' && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center text-white">
+                  <div className="text-center text-white p-2">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto mb-2"></div>
-                    <p className="text-sm font-medium">{item.progress}%</p>
+                    <p className="text-lg font-bold">{item.progress}%</p>
+                    {item.progressDetails && (
+                      <div className="text-xs mt-1">
+                        {item.progressDetails.step && <p>Step: {item.progressDetails.step}</p>}
+                        {item.progressDetails.nodes_completed !== undefined &&
+                         item.progressDetails.nodes_total !== undefined && (
+                          <p>Node: {item.progressDetails.nodes_completed}/{item.progressDetails.nodes_total}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

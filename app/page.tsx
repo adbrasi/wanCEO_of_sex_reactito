@@ -24,6 +24,7 @@ export default function Home() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [currentProgressDetails, setCurrentProgressDetails] = useState<any>(null);
   const [todayHistory, setTodayHistory] = useState<GenerationHistory[]>([]);
   const [yesterdayHistory, setYesterdayHistory] = useState<GenerationHistory[]>([]);
   const [queuedJobs, setQueuedJobs] = useState(0);
@@ -133,9 +134,13 @@ export default function Home() {
           // Poll for completion
           return pollJobCompletion(
             jobId,
-            (progress) => {
-              setCurrentProgress(progress);
-              updateHistoryItem(historyId, { progress });
+            (progressInfo) => {
+              setCurrentProgress(progressInfo.progress);
+              setCurrentProgressDetails(progressInfo.details);
+              updateHistoryItem(historyId, {
+                progress: progressInfo.progress,
+                progressDetails: progressInfo.details
+              });
             }
           ).then((result) => {
             if (result.outputs && result.outputs.length > 0) {
@@ -185,6 +190,7 @@ export default function Home() {
     } finally {
       setIsGenerating(false);
       setCurrentProgress(0);
+      setCurrentProgressDetails(null);
     }
   };
 
@@ -334,13 +340,23 @@ export default function Home() {
                 className="w-full py-3.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 {isGenerating ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Generating... {currentProgress}%
-                    {queuedJobs > 0 && ` (${queuedJobs} queued)`}
+                  <span className="flex flex-col items-center justify-center">
+                    <span className="flex items-center">
+                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Generating... {currentProgress}%
+                      {queuedJobs > 0 && ` (${queuedJobs} queued)`}
+                    </span>
+                    {currentProgressDetails && (
+                      <span className="text-xs mt-1 opacity-90">
+                        {currentProgressDetails.step && `Step: ${currentProgressDetails.step}`}
+                        {currentProgressDetails.nodes_completed !== undefined &&
+                         currentProgressDetails.nodes_total !== undefined &&
+                         ` | Node: ${currentProgressDetails.nodes_completed}/${currentProgressDetails.nodes_total}`}
+                      </span>
+                    )}
                   </span>
                 ) : (
                   `Generate ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`

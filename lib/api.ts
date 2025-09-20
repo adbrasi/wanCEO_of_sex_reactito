@@ -21,6 +21,12 @@ interface JobStatus {
   job_id: string;
   status: 'queued' | 'running' | 'completed' | 'failed';
   progress: number;
+  progress_details?: {
+    current_node?: string;
+    nodes_completed?: number;
+    nodes_total?: number;
+    step?: string;
+  };
   outputs?: Array<{
     filename: string;
     data: string;
@@ -108,9 +114,19 @@ export async function checkJobStatus(jobId: string): Promise<JobStatus> {
   return response.json();
 }
 
+export interface ProgressInfo {
+  progress: number;
+  details?: {
+    current_node?: string;
+    nodes_completed?: number;
+    nodes_total?: number;
+    step?: string;
+  };
+}
+
 export async function pollJobCompletion(
   jobId: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (info: ProgressInfo) => void
 ): Promise<JobStatus> {
   return new Promise((resolve, reject) => {
     // Don't even start polling if jobId is invalid
@@ -130,7 +146,10 @@ export async function pollJobCompletion(
         retryCount = 0;
 
         if (onProgress) {
-          onProgress(status.progress);
+          onProgress({
+            progress: status.progress || 0,
+            details: status.progress_details
+          });
         }
 
         if (status.status === 'completed') {
