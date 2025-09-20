@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/submit-job/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/check-job/[jobId]/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/cancel-job/[jobId]/route.ts": {
+      "maxDuration": 10
+    }
+  }
+}

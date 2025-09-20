@@ -8,10 +8,12 @@ interface HistoryGalleryProps {
   items: GenerationHistory[];
   title: string;
   onDelete: (id: string) => void;
+  onCancel?: (jobId: string) => void;
 }
 
-export default function HistoryGallery({ items, title, onDelete }: HistoryGalleryProps) {
+export default function HistoryGallery({ items, title, onDelete, onCancel }: HistoryGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<GenerationHistory | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
@@ -32,6 +34,34 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
     });
   }, [hoveredId]);
 
+  // Handle arrow key navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedItem) return;
+
+      if (e.key === 'ArrowLeft' && selectedIndex > 0) {
+        const newIndex = selectedIndex - 1;
+        setSelectedIndex(newIndex);
+        setSelectedItem(items[newIndex]);
+      } else if (e.key === 'ArrowRight' && selectedIndex < items.length - 1) {
+        const newIndex = selectedIndex + 1;
+        setSelectedIndex(newIndex);
+        setSelectedItem(items[newIndex]);
+      } else if (e.key === 'Escape') {
+        setSelectedItem(null);
+        setSelectedIndex(-1);
+      }
+    };
+
+    if (selectedItem) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedItem, selectedIndex, items]);
+
   if (items.length === 0) return null;
 
   const downloadVideo = (e: React.MouseEvent, item: GenerationHistory) => {
@@ -49,11 +79,14 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
       <h3 className="text-xl font-semibold mb-4 text-gray-700">{title} ({items.length})</h3>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <div
             key={item.id}
             className="relative group cursor-pointer rounded-xl overflow-hidden bg-gray-100 shadow-md hover:shadow-xl transition-all duration-300"
-            onClick={() => setSelectedItem(item)}
+            onClick={() => {
+              setSelectedItem(item);
+              setSelectedIndex(index);
+            }}
             onMouseEnter={() => setHoveredId(item.id)}
             onMouseLeave={() => setHoveredId(null)}
           >
@@ -83,19 +116,7 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
               {/* Status Overlays */}
               {item.status === 'pending' && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center text-white p-2">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white mx-auto mb-2"></div>
-                    <p className="text-lg font-bold">{item.progress}%</p>
-                    {item.progressDetails && (
-                      <div className="text-xs mt-1">
-                        {item.progressDetails.step && <p>Step: {item.progressDetails.step}</p>}
-                        {item.progressDetails.nodes_completed !== undefined &&
-                         item.progressDetails.nodes_total !== undefined && (
-                          <p>Node: {item.progressDetails.nodes_completed}/{item.progressDetails.nodes_total}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white"></div>
                 </div>
               )}
 
@@ -132,21 +153,26 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
                   </button>
                 )}
 
-                {/* Delete Button for Failed/Completed Videos */}
-                {(item.status === 'failed' || item.status === 'completed') && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(item.id);
-                    }}
-                    className="bg-red-500/90 backdrop-blur p-2 rounded-lg hover:bg-red-600 transition-colors shadow-lg"
-                    title="Delete"
-                  >
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
+                {/* Delete/Cancel Button - always show for all states */}
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+
+                    // For pending items, always try to cancel the job on API first
+                    if (item.status === 'pending' && onCancel && item.jobId) {
+                      await onCancel(item.jobId);
+                    }
+
+                    // Always delete from local storage
+                    onDelete(item.id);
+                  }}
+                  className="bg-red-500/90 backdrop-blur p-2 rounded-lg hover:bg-red-600 transition-colors shadow-lg"
+                  title={item.status === 'pending' ? 'Cancel' : 'Delete'}
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -161,18 +187,42 @@ export default function HistoryGallery({ items, title, onDelete }: HistoryGaller
 
       {/* Modal for Selected Video */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
-          <div className="bg-white rounded-2xl p-6 max-w-5xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <VideoPlayer item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4 md:p-8" onClick={() => {
+          setSelectedItem(null);
+          setSelectedIndex(-1);
+        }}>
+          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Header with close button */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold">Video Preview</h3>
+              <button
+                onClick={() => {
+                  setSelectedItem(null);
+                  setSelectedIndex(-1);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-            <div className="mt-6 p-5 bg-gray-50 rounded-xl">
-              <h4 className="font-bold text-lg mb-3 text-gray-800">Generation Details</h4>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-700"><span className="font-semibold">Prompt:</span> {selectedItem.prompt}</p>
-                <p className="text-sm text-gray-700"><span className="font-semibold">Negative:</span> {selectedItem.negativePrompt}</p>
-                <p className="text-sm text-gray-700"><span className="font-semibold">Resolution:</span> {selectedItem.resolution}</p>
-                <p className="text-sm text-gray-700"><span className="font-semibold">Frames:</span> {selectedItem.frames}</p>
-                <p className="text-sm text-gray-500 mt-3">Generated: {new Date(selectedItem.timestamp).toLocaleString()}</p>
+            {/* Video content - scrollable */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="aspect-square max-w-full mx-auto bg-black rounded-lg overflow-hidden">
+                <VideoPlayer item={selectedItem} onClose={() => setSelectedItem(null)} />
+              </div>
+
+              {/* Details section */}
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold mb-2 text-gray-800">Details</h4>
+                <div className="space-y-1 text-sm">
+                  <p className="text-gray-600 break-words"><span className="font-medium">Prompt:</span> {selectedItem.prompt}</p>
+                  <p className="text-gray-600"><span className="font-medium">Resolution:</span> {selectedItem.resolution}</p>
+                  <p className="text-gray-600"><span className="font-medium">Frames:</span> {selectedItem.frames}</p>
+                  <p className="text-gray-500 mt-2 text-xs">{new Date(selectedItem.timestamp).toLocaleString()}</p>
+                </div>
               </div>
             </div>
           </div>

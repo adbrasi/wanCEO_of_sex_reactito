@@ -8,12 +8,11 @@ export interface GenerationHistory {
   status: 'pending' | 'completed' | 'failed';
   timestamp: number;
   progress: number;
-  progressDetails?: {
-    current_node?: string;
-    nodes_completed?: number;
-    nodes_total?: number;
-    step?: string;
-  };
+  progress_value?: number;
+  progress_max?: number;
+  nodes_done?: number;
+  nodes_total?: number;
+  current_node?: string;
   resolution: '768x768' | '1024x1024';
   frames: number;
 }

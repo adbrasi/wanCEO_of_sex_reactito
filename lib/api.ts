@@ -21,17 +21,21 @@ interface JobStatus {
   job_id: string;
   status: 'queued' | 'running' | 'completed' | 'failed';
   progress: number;
-  progress_details?: {
-    current_node?: string;
-    nodes_completed?: number;
-    nodes_total?: number;
-    step?: string;
-  };
+  progress_value?: number;
+  progress_max?: number;
+  nodes_total?: number;
+  nodes_done?: number;
+  current_node?: string;
+  prompt_id?: string;
+  last_event_time?: string;
   outputs?: Array<{
     filename: string;
     data: string;
+    type?: string;
+    size_bytes?: number;
   }>;
   error?: string;
+  error_log_tail?: string[];
 }
 
 export async function loadWorkflow() {
@@ -44,9 +48,14 @@ export async function submitJob(
   prompt: string,
   negativePrompt: string,
   imageName: string,
-  seed: number
+  seed: number,
+  frames: number = 49,
+  resolution: string = '768x768'
 ): Promise<string> {
   const workflow = await loadWorkflow();
+
+  // Parse resolution
+  const [width, height] = resolution.split('x').map(n => parseInt(n));
 
   // Update workflow with seed for all seed nodes
   // Node 27 has the main seed
@@ -56,6 +65,17 @@ export async function submitJob(
   // Node 90 also has a seed
   if (workflow['90'] && workflow['90'].inputs) {
     workflow['90'].inputs.seed = seed;
+  }
+
+  // Update frames in node 89
+  if (workflow['89'] && workflow['89'].inputs) {
+    workflow['89'].inputs.num_frames = frames;
+  }
+
+  // Update resolution in node 68 (ImageResize)
+  if (workflow['68'] && workflow['68'].inputs) {
+    workflow['68'].inputs.width = width;
+    workflow['68'].inputs.height = height;
   }
 
   const submission: JobSubmission = {
@@ -116,17 +136,17 @@ export async function checkJobStatus(jobId: string): Promise<JobStatus> {
 
 export interface ProgressInfo {
   progress: number;
-  details?: {
-    current_node?: string;
-    nodes_completed?: number;
-    nodes_total?: number;
-    step?: string;
-  };
+  progress_value?: number;
+  progress_max?: number;
+  nodes_done?: number;
+  nodes_total?: number;
+  current_node?: string;
 }
 
 export async function pollJobCompletion(
   jobId: string,
-  onProgress?: (info: ProgressInfo) => void
+  onProgress?: (info: ProgressInfo) => void,
+  isLikelyQueued: boolean = false
 ): Promise<JobStatus> {
   return new Promise((resolve, reject) => {
     // Don't even start polling if jobId is invalid
@@ -137,7 +157,10 @@ export async function pollJobCompletion(
 
     let retryCount = 0;
     const maxRetries = 3;
-    
+    let hasStartedProcessing = false;
+    let queuedTime = 0;
+    const maxQueueTime = 600000; // 10 minutes max queue time
+
     const interval = setInterval(async () => {
       try {
         const status = await checkJobStatus(jobId);
@@ -145,10 +168,30 @@ export async function pollJobCompletion(
         // Reset retry count on successful request
         retryCount = 0;
 
+        // Track if job has started processing
+        if (status.status === 'running' && !hasStartedProcessing) {
+          hasStartedProcessing = true;
+          console.log(`Job ${jobId} started processing after ${queuedTime/1000}s in queue`);
+        }
+
+        // Track queue time for jobs that might be queued
+        if (status.status === 'queued' && isLikelyQueued) {
+          queuedTime += 3000;
+          if (queuedTime > maxQueueTime) {
+            clearInterval(interval);
+            reject(new Error('Job stuck in queue for too long'));
+            return;
+          }
+        }
+
         if (onProgress) {
           onProgress({
             progress: status.progress || 0,
-            details: status.progress_details
+            progress_value: status.progress_value,
+            progress_max: status.progress_max,
+            nodes_done: status.nodes_done,
+            nodes_total: status.nodes_total,
+            current_node: status.current_node
           });
         }
 
@@ -162,7 +205,7 @@ export async function pollJobCompletion(
       } catch (error) {
         retryCount++;
         console.error(`Polling attempt ${retryCount} failed:`, error);
-        
+
         if (retryCount >= maxRetries) {
           clearInterval(interval);
           reject(new Error(`Failed to check job status after ${maxRetries} retries`));

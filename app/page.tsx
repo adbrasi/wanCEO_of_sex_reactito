@@ -22,13 +22,10 @@ export default function Home() {
   const [batchSize, setBatchSize] = useState(1);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [currentProgress, setCurrentProgress] = useState(0);
-  const [currentProgressDetails, setCurrentProgressDetails] = useState<any>(null);
   const [todayHistory, setTodayHistory] = useState<GenerationHistory[]>([]);
   const [yesterdayHistory, setYesterdayHistory] = useState<GenerationHistory[]>([]);
-  const [queuedJobs, setQueuedJobs] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeJobsRef = useRef(0); // Track active jobs across renders
 
   // Generate valid frame numbers (N*4+1)
   const validFrameNumbers = Array.from({ length: 50 }, (_, i) => i * 4 + 1).filter(n => n <= 200);
@@ -67,24 +64,37 @@ export default function Home() {
     });
   };
 
+  const cancelJob = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/cancel-job/${jobId}`, { method: 'DELETE' });
+      if (response.ok) {
+        console.log(`Successfully cancelled job ${jobId}`);
+        // Find and update the item by jobId
+        const history = getHistory();
+        const item = history.find(h => h.jobId === jobId);
+        if (item) {
+          updateHistoryItem(item.id, { status: 'failed' });
+        }
+      } else {
+        console.error(`Failed to cancel job ${jobId}: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error cancelling job:', error);
+    }
+  };
+
   const generateVideo = async () => {
     if (!selectedImage || !prompt) {
       alert('Please select an image and enter a prompt');
       return;
     }
 
-    // If already generating, add to queue
-    if (isGenerating) {
-      setQueuedJobs(prev => prev + batchSize);
-      return;
-    }
-
-    setIsGenerating(true);
-    setCurrentProgress(0);
-
     try {
       const imageBase64 = await fileToBase64(selectedImage);
       const thumbnail = await createThumbnail(imageBase64);
+
+      // Increment active jobs counter
+      activeJobsRef.current += batchSize;
 
       // Create all batch items at once for UI
       const historyItems: Array<{ id: string; seed: number }> = [];
@@ -113,10 +123,14 @@ export default function Home() {
 
       // Submit jobs with delay to avoid Modal file locking issues
       const batchPromises = [];
-      
+
       for (let i = 0; i < historyItems.length; i++) {
         const { id: historyId, seed } = historyItems[i];
-        
+
+        // Track if this job is likely to be queued (5th or later)
+        const currentJobIndex = activeJobsRef.current + i;
+        const isLikelyQueued = currentJobIndex >= 4;
+
         // Add delay between submissions (except for first one)
         if (i > 0) {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -127,22 +141,30 @@ export default function Home() {
           prompt,
           negativePrompt,
           selectedImage.name,
-          seed
+          seed,
+          frames,
+          resolution
         ).then(jobId => {
           updateHistoryItem(historyId, { jobId });
 
-          // Poll for completion
+          // Poll for completion, with queue hint for jobs likely to be queued
           return pollJobCompletion(
             jobId,
             (progressInfo) => {
-              setCurrentProgress(progressInfo.progress);
-              setCurrentProgressDetails(progressInfo.details);
               updateHistoryItem(historyId, {
                 progress: progressInfo.progress,
-                progressDetails: progressInfo.details
+                progress_value: progressInfo.progress_value,
+                progress_max: progressInfo.progress_max,
+                nodes_done: progressInfo.nodes_done,
+                nodes_total: progressInfo.nodes_total,
+                current_node: progressInfo.current_node
               });
-            }
+            },
+            isLikelyQueued
           ).then((result) => {
+            // Decrement active jobs counter when job completes
+            activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
+
             if (result.outputs && result.outputs.length > 0) {
               const videoData = result.outputs[0].data;
               const videoBlob = new Blob(
@@ -156,11 +178,21 @@ export default function Home() {
                 videoUrl,
                 progress: 100
               });
+            } else {
+              // No outputs means it failed
+              updateHistoryItem(historyId, {
+                status: 'failed',
+                progress: 100
+              });
             }
           }).catch((error) => {
+            // Decrement active jobs counter when job fails
+            activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
+
             console.error('Generation failed:', error);
             updateHistoryItem(historyId, {
-              status: 'failed'
+              status: 'failed',
+              progress: 0
             });
           });
         }).catch(error => {
@@ -173,24 +205,11 @@ export default function Home() {
         batchPromises.push(jobPromise);
       }
 
-      // Wait for all batch jobs to complete
-      await Promise.allSettled(batchPromises);
-
-      // Process queued jobs if any
-      if (queuedJobs > 0) {
-        const jobsToProcess = queuedJobs;
-        setQueuedJobs(0);
-        setBatchSize(jobsToProcess);
-        // Recursively call generateVideo for queued jobs
-        setTimeout(() => generateVideo(), 100);
-      }
+      // Don't wait - just fire and forget
+      Promise.allSettled(batchPromises);
     } catch (error) {
       console.error('Error generating video:', error);
       alert('Failed to generate video. Please try again.');
-    } finally {
-      setIsGenerating(false);
-      setCurrentProgress(0);
-      setCurrentProgressDetails(null);
     }
   };
 
@@ -339,28 +358,7 @@ export default function Home() {
                 disabled={!selectedImage || !prompt}
                 className="w-full py-3.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98]"
               >
-                {isGenerating ? (
-                  <span className="flex flex-col items-center justify-center">
-                    <span className="flex items-center">
-                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Generating... {currentProgress}%
-                      {queuedJobs > 0 && ` (${queuedJobs} queued)`}
-                    </span>
-                    {currentProgressDetails && (
-                      <span className="text-xs mt-1 opacity-90">
-                        {currentProgressDetails.step && `Step: ${currentProgressDetails.step}`}
-                        {currentProgressDetails.nodes_completed !== undefined &&
-                         currentProgressDetails.nodes_total !== undefined &&
-                         ` | Node: ${currentProgressDetails.nodes_completed}/${currentProgressDetails.nodes_total}`}
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  `Generate ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`
-                )}
+                {`Generate ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`}
               </button>
             </div>
           </div>
@@ -370,8 +368,8 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-3xl font-bold mb-6 text-gray-800">Generation History</h2>
 
-          <HistoryGallery items={todayHistory} title="Today" onDelete={deleteHistoryItem} />
-          <HistoryGallery items={yesterdayHistory} title="Yesterday" onDelete={deleteHistoryItem} />
+          <HistoryGallery items={todayHistory} title="Today" onDelete={deleteHistoryItem} onCancel={cancelJob} />
+          <HistoryGallery items={yesterdayHistory} title="Yesterday" onDelete={deleteHistoryItem} onCancel={cancelJob} />
 
           {todayHistory.length === 0 && yesterdayHistory.length === 0 && (
             <div className="text-center py-16 text-gray-500">

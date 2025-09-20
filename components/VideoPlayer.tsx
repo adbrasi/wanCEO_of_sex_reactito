@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GenerationHistory } from '@/lib/storage';
 
 interface VideoPlayerProps {
@@ -10,23 +10,48 @@ interface VideoPlayerProps {
 
 export default function VideoPlayer({ item, onClose }: VideoPlayerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Reset error state when item changes
+    setHasError(false);
+  }, [item.videoUrl]);
+
+  const handleVideoError = () => {
+    console.error('Video playback error for:', item.videoUrl);
+    setHasError(true);
+  };
 
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative'} flex items-center justify-center`}>
-      {item.videoUrl ? (
+    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative w-full h-full'} flex items-center justify-center`}>
+      {item.videoUrl && !hasError ? (
         <video
+          ref={videoRef}
           controls
           autoPlay
           loop
-          className={`${isFullscreen ? 'max-w-full max-h-full' : 'w-full rounded-lg'}`}
-          src={item.videoUrl}
-        />
-      ) : (
-        <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Processing... {item.progress}%</p>
+          muted
+          playsInline
+          className={`${isFullscreen ? 'max-w-full max-h-full' : 'w-full h-full object-contain'}`}
+          onError={handleVideoError}
+        >
+          <source src={item.videoUrl} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      ) : hasError ? (
+        <div className="w-full aspect-square bg-gray-900 flex items-center justify-center">
+          <div className="text-center p-4">
+            <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-gray-300">Video playback error</p>
+            <p className="text-sm text-gray-400 mt-2">Try downloading the video instead</p>
           </div>
+        </div>
+      ) : (
+        <div className="w-full aspect-square bg-gray-900 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-white"></div>
         </div>
       )}
 
