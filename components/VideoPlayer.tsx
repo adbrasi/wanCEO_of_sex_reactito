@@ -67,16 +67,17 @@ export default function VideoPlayer({ item, onClose, variant = 'inline', classNa
         </div>
       )}
 
-      {item.videoUrl && item.status === 'completed' && (
-        <div className="absolute top-4 right-4">
+      {item.videoUrl && item.status === 'completed' && !hasError && (
+        <div className="absolute top-2 right-2 z-10">
           <a
             href={item.videoUrl}
             download={`video-${item.id}.mp4`}
-            className="rounded-full bg-white/80 p-2 shadow-md backdrop-blur hover:bg-white text-slate-900"
+            className="inline-flex items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-black/80 transition-colors"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
+            Download
           </a>
         </div>
       )}

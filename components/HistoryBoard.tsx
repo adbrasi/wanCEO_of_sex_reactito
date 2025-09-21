@@ -47,76 +47,85 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
                 const isSelected = selectedId === item.id;
 
                 return (
-                  <button
+                  <div
                     key={item.id}
-                    type="button"
-                    onClick={() => onSelect(item)}
-                    className={`w-full rounded-3xl border border-slate-800 bg-slate-900/60 p-4 text-left transition transform hover:-translate-y-1 hover:border-brand-500/40 ${
+                    className={`w-full rounded-3xl border border-slate-800 bg-slate-900/60 text-left transition transform hover:-translate-y-1 hover:border-brand-500/40 overflow-hidden ${
                       isSelected ? 'border-brand-500/50 shadow-lg shadow-brand-500/20' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="relative flex-shrink-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950" style={{ width: '96px', height: '64px' }}>
-                        {item.videoUrl ? (
-                          <video
-                            src={item.videoUrl}
-                            muted
-                            playsInline
-                            loop
-                            className="absolute inset-0 h-full w-full object-contain bg-black"
-                          />
-                        ) : (
-                          <img src={item.imagePreview} alt={item.prompt} className="absolute inset-0 h-full w-full object-contain bg-black" />
-                        )}
-                      </div>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(item)}
+                      className="w-full p-4"
+                    >
+                      <div className="grid grid-cols-[80px_1fr] gap-3">
+                        {/* Fixed thumbnail container */}
+                        <div className="relative h-[60px] w-[80px] overflow-hidden rounded-xl border border-slate-800 bg-black">
+                          {item.videoUrl ? (
+                            <video
+                              src={item.videoUrl}
+                              muted
+                              playsInline
+                              loop
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <img src={item.imagePreview} alt={item.prompt} className="absolute inset-0 h-full w-full object-cover" />
+                          )}
+                        </div>
 
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="truncate text-sm font-semibold text-slate-100 flex-1">
+                        {/* Content container */}
+                        <div className="min-w-0">
+                          {/* Title and status badge */}
+                          <div className="flex items-start gap-2 mb-1">
+                            <p className="flex-1 truncate text-sm font-semibold text-slate-100 pr-2">
                               {item.prompt || 'Untitled prompt'}
                             </p>
-                            <span className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold ${tone}`}>
+                            <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold ${tone}`}>
                               <span className="h-1.5 w-1.5 rounded-full bg-current" />
                               {item.status === 'pending' ? 'Rendering' : item.status === 'completed' ? 'Ready' : 'Failed'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-[0.7rem] text-slate-500">
+
+                          {/* Metadata */}
+                          <div className="flex items-center gap-2 text-[0.65rem] text-slate-500 mb-2">
                             <span>{item.resolution}</span>
                             <span>•</span>
                             <span>{item.frames}f</span>
                             <span>•</span>
                             <span>{formatTimestamp(item.timestamp)}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-end gap-2 mt-2 text-slate-400">
-                          {item.status === 'completed' && item.videoUrl && (
-                            <a
-                              href={item.videoUrl}
-                              download={`video-${item.id}.mp4`}
-                              onClick={(event) => event.stopPropagation()}
-                              className="rounded-full border border-slate-700/60 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide hover:border-brand-400 hover:text-brand-200"
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2">
+                            {item.status === 'completed' && item.videoUrl && (
+                              <a
+                                href={item.videoUrl}
+                                download={`video-${item.id}.mp4`}
+                                onClick={(event) => event.stopPropagation()}
+                                className="rounded-full border border-slate-700/60 px-2.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-slate-400 hover:border-brand-400 hover:text-brand-200"
+                              >
+                                Download
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                if (item.status === 'pending' && onCancel && item.jobId) {
+                                  onCancel(item.jobId);
+                                }
+                                onDelete(item.id);
+                              }}
+                              className="rounded-full border border-danger-500/30 px-2.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-danger-200 hover:border-danger-400 hover:text-white"
                             >
-                              Download
-                            </a>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (item.status === 'pending' && onCancel && item.jobId) {
-                                onCancel(item.jobId);
-                              }
-                              onDelete(item.id);
-                            }}
-                            className="rounded-full border border-danger-500/30 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-danger-200 hover:border-danger-400 hover:text-white"
-                          >
-                            {item.status === 'pending' ? 'Cancel' : 'Remove'}
-                          </button>
+                              {item.status === 'pending' ? 'Cancel' : 'Remove'}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
             </div>
