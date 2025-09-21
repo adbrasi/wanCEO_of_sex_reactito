@@ -1,31 +1,70 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { GenerationHistory } from '@/lib/storage';
+
+type VideoPlayerVariant = 'inline' | 'modal';
 
 interface VideoPlayerProps {
   item: GenerationHistory;
   onClose?: () => void;
+  variant?: VideoPlayerVariant;
+  className?: string;
 }
 
-export default function VideoPlayer({ item, onClose }: VideoPlayerProps) {
+export default function VideoPlayer({ item, onClose, variant = 'inline', className = '' }: VideoPlayerProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Reset error state when item changes
     setHasError(false);
-  }, [item.videoUrl]);
+    if (variant === 'inline') {
+      setIsFullscreen(false);
+    }
+  }, [item.videoUrl, variant]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const entering = document.fullscreenElement === wrapperRef.current;
+      setIsFullscreen(entering);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const handleVideoError = () => {
     console.error('Video playback error for:', item.videoUrl);
     setHasError(true);
   };
 
+  const isInline = variant === 'inline' && !isFullscreen;
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!wrapperRef.current) return;
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => {
+        setIsFullscreen(false);
+      });
+    } else {
+      await wrapperRef.current.requestFullscreen().catch(() => {
+        setIsFullscreen((prev) => !prev);
+      });
+    }
+  }, []);
+
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'relative w-full h-full'} flex items-center justify-center`}>
-      {item.videoUrl && !hasError ? (
+    <div
+      ref={wrapperRef}
+      className={`${
+        isFullscreen ? 'fixed inset-0 z-50 bg-black/95' : 'relative'
+      } flex h-full w-full items-center justify-center transition-all duration-300 ${className}`.trim()}
+    >
+      {item.videoUrl && !hasError && item.status === 'completed' ? (
         <video
           ref={videoRef}
           controls
@@ -33,67 +72,92 @@ export default function VideoPlayer({ item, onClose }: VideoPlayerProps) {
           loop
           muted
           playsInline
-          className={`${isFullscreen ? 'max-w-full max-h-full' : 'w-full h-full object-contain'}`}
+          className={`${
+            isFullscreen ? 'max-h-full max-w-full' : 'h-full w-full rounded-2xl object-contain'
+          } shadow-lg`}
           onError={handleVideoError}
         >
           <source src={item.videoUrl} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+      ) : item.status === 'pending' ? (
+        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-2xl bg-slate-900/80 p-8">
+          <div className="text-center text-slate-200">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-brand-400"></div>
+            <p className="text-sm font-medium uppercase tracking-wide text-brand-100">Generating…</p>
+            {typeof item.progress === 'number' && (
+              <p className="mt-2 text-xs text-slate-300">
+                {item.progress}% {item.current_node ? `• ${item.current_node}` : ''}
+              </p>
+            )}
+          </div>
+        </div>
       ) : hasError ? (
-        <div className="w-full aspect-square bg-gray-900 flex items-center justify-center">
-          <div className="text-center p-4">
-            <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-2xl bg-slate-900/80 p-8 text-center">
+          <div>
+            <svg className="mx-auto mb-4 h-12 w-12 text-danger-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-gray-300">Video playback error</p>
-            <p className="text-sm text-gray-400 mt-2">Try downloading the video instead</p>
+            <p className="text-base font-semibold text-white">Video playback error</p>
+            <p className="mt-2 text-sm text-slate-200">Try downloading the video instead.</p>
           </div>
         </div>
       ) : (
-        <div className="w-full aspect-square bg-gray-900 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-white"></div>
+        <div className="flex aspect-video w-full max-w-3xl items-center justify-center rounded-2xl bg-slate-900/80 p-8 text-slate-200">
+          <div className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-slate-700 border-t-white"></div>
+            <p className="text-sm text-slate-300">Preparing preview…</p>
+          </div>
         </div>
       )}
 
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          className="bg-white/80 backdrop-blur p-2 rounded-lg hover:bg-white transition-colors"
+      {(item.videoUrl || onClose) && (
+        <div
+          className={`${
+            isInline ? 'absolute bottom-4 right-4 flex gap-2' : 'fixed top-6 right-6 flex gap-3'
+          } text-slate-900`}
         >
-          {isFullscreen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-            </svg>
+          {item.videoUrl && (
+            <a
+              href={item.videoUrl}
+              download={`video-${item.id}.mp4`}
+              className="rounded-full bg-white/80 p-2 shadow-md backdrop-blur hover:bg-white"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </a>
           )}
-        </button>
 
-        {item.videoUrl && (
-          <a
-            href={item.videoUrl}
-            download={`video-${item.id}.mp4`}
-            className="bg-white/80 backdrop-blur p-2 rounded-lg hover:bg-white transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </a>
-        )}
-
-        {onClose && (
           <button
-            onClick={onClose}
-            className="bg-white/80 backdrop-blur p-2 rounded-lg hover:bg-white transition-colors"
+            onClick={toggleFullscreen}
+            className="rounded-full bg-white/80 p-2 shadow-md backdrop-blur hover:bg-white"
+            type="button"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            {isFullscreen ? (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l6 6m10-2V4m0 0h-4m4 0l-6 6M4 16v4m0 0h4m-4 0l6-6m10 2v4m0 0h-4m4 0l-6-6" />
+              </svg>
+            )}
           </button>
-        )}
-      </div>
+
+          {onClose && !isInline && (
+            <button
+              onClick={onClose}
+              className="rounded-full bg-white/80 p-2 shadow-md backdrop-blur hover:bg-white"
+              type="button"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

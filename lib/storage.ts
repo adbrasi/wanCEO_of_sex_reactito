@@ -17,7 +17,14 @@ export interface GenerationHistory {
   frames: number;
 }
 
+export const HISTORY_UPDATED_EVENT = 'wan-history-updated';
+
 const STORAGE_KEY = 'video_generation_history';
+
+function notifyHistoryUpdate(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(HISTORY_UPDATED_EVENT));
+}
 
 export function getHistory(): GenerationHistory[] {
   if (typeof window === 'undefined') return [];
@@ -28,6 +35,7 @@ export function getHistory(): GenerationHistory[] {
 export function saveHistory(history: GenerationHistory[]): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  notifyHistoryUpdate();
 }
 
 export function addToHistory(item: GenerationHistory): void {
