@@ -33,7 +33,7 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
         </div>
       </header>
 
-      <div className="space-y-6 overflow-y-auto pr-1">
+      <div className="flex-1 space-y-6 overflow-y-auto overflow-x-hidden">
         {sections.map((section) => (
           <div key={section.title} className="space-y-3">
             {section.items.length > 0 && (
@@ -56,43 +56,40 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="relative h-16 w-24 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
+                      <div className="relative flex-shrink-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950" style={{ width: '96px', height: '64px' }}>
                         {item.videoUrl ? (
                           <video
                             src={item.videoUrl}
                             muted
                             playsInline
                             loop
-                            className="h-full w-full object-cover"
+                            className="absolute inset-0 h-full w-full object-contain bg-black"
                           />
                         ) : (
-                          <img src={item.imagePreview} alt={item.prompt} className="h-full w-full object-cover" />
+                          <img src={item.imagePreview} alt={item.prompt} className="absolute inset-0 h-full w-full object-contain bg-black" />
                         )}
                       </div>
 
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="truncate text-sm font-semibold text-slate-100">
-                            {item.prompt || 'Untitled prompt'}
-                          </p>
-                          <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.65rem] font-semibold ${tone}`}>
-                            <span className="h-2 w-2 rounded-full bg-current" />
-                            {item.status === 'pending' ? 'Rendering' : item.status === 'completed' ? 'Ready' : 'Failed'}
-                          </span>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate text-sm font-semibold text-slate-100 flex-1">
+                              {item.prompt || 'Untitled prompt'}
+                            </p>
+                            <span className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold ${tone}`}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              {item.status === 'pending' ? 'Rendering' : item.status === 'completed' ? 'Ready' : 'Failed'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[0.7rem] text-slate-500">
+                            <span>{item.resolution}</span>
+                            <span>•</span>
+                            <span>{item.frames}f</span>
+                            <span>•</span>
+                            <span>{formatTimestamp(item.timestamp)}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-[0.7rem] text-slate-500">
-                          <span>{item.resolution}</span>
-                          <span>•</span>
-                          <span>{item.frames} frames</span>
-                          <span>•</span>
-                          <span>{formatTimestamp(item.timestamp)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          {item.status === 'pending' && item.current_node && (
-                            <span>{item.current_node}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-end gap-2 text-slate-400">
+                        <div className="flex items-center justify-end gap-2 mt-2 text-slate-400">
                           {item.status === 'completed' && item.videoUrl && (
                             <a
                               href={item.videoUrl}

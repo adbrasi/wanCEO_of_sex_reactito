@@ -29,7 +29,31 @@ function notifyHistoryUpdate(): void {
 export function getHistory(): GenerationHistory[] {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  const history = stored ? JSON.parse(stored) : [];
+
+  // Clean up old videos with broken blob URLs and failed videos older than 1 day
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const filtered = history.filter((item: GenerationHistory) => {
+    // Keep pending and recent items
+    if (item.status === 'pending') return true;
+
+    // Remove old failed items
+    if (item.status === 'failed' && item.timestamp < oneDayAgo) return false;
+
+    // Remove completed items with broken blob URLs (older than 1 day)
+    if (item.status === 'completed' && item.videoUrl?.startsWith('blob:') && item.timestamp < oneDayAgo) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Save filtered history if different
+  if (filtered.length !== history.length) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  }
+
+  return filtered;
 }
 
 export function saveHistory(history: GenerationHistory[]): void {

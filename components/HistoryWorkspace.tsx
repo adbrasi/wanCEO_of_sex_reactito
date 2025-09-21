@@ -66,7 +66,7 @@ export default function HistoryWorkspace({ item, onDeleteItem, onCancelJob }: Hi
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-4xl border border-slate-800 bg-black/70">
+      <div className="flex items-center justify-center overflow-hidden rounded-4xl border border-slate-800 bg-black/70 p-4">
         <VideoPlayer item={item} variant="inline" className="rounded-3xl" />
       </div>
 

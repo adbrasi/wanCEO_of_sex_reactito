@@ -259,7 +259,10 @@ export default function Home() {
         batchPromises.push(jobPromise);
       }
 
-      Promise.allSettled(batchPromises);
+      // Non-blocking execution - allows new requests while generating
+      Promise.allSettled(batchPromises).then(() => {
+        console.log('Batch generation complete');
+      });
     } catch (error) {
       console.error('Error generating video:', error);
       alert('Failed to generate video. Please try again.');
@@ -295,29 +298,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1800px] flex-col gap-10 px-6 py-10 xl:px-12">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-4xl border border-slate-800 bg-slate-950/80 p-6 shadow-[0_25px_60px_-35px_rgba(15,23,42,0.85)] backdrop-blur">
-          <div>
-            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" /> Arakis Studio
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">WAN Video Composer</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-400">
-              Craft motion from a single frame. Queue renders, monitor progress, and keep your creative history at your fingertips.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-xs font-semibold text-brand-200 shadow-sm">
-              <span className="block text-[0.65rem] uppercase tracking-[0.35em] text-brand-300">Today</span>
-              <span className="text-lg">{todayHistory.length} renders</span>
-            </div>
-            <div className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-xs font-semibold text-slate-300 shadow-sm">
-              <span className="block text-[0.65rem] uppercase tracking-[0.35em] text-slate-500">All Time</span>
-              <span className="text-lg">{combinedHistory.length}</span>
-            </div>
-          </div>
-        </header>
-
+      <div className="mx-auto flex min-h-screen w-full max-w-[1800px] flex-col gap-6 px-6 py-6 xl:px-12">
         <main className="grid flex-1 grid-cols-1 gap-6 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
           <ControlPanel
             prompt={prompt}

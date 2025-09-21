@@ -82,44 +82,27 @@ export default function ControlPanel({
 
   return (
     <aside className="flex h-full flex-col gap-5 rounded-4xl border border-slate-800 bg-slate-950/85 p-6 shadow-[0_25px_65px_-35px_rgba(15,23,42,0.9)] backdrop-blur">
-      <header className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-content-center rounded-2xl bg-brand-500/20 text-brand-200">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M12 6v6l4 2" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">WAN Studio</p>
-              <h1 className="text-lg font-semibold text-white">Video Composer</h1>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onGenerate}
-            disabled={!canGenerate}
-            className={`flex items-center gap-2 rounded-3xl px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-              canGenerate
-                ? 'bg-brand-500 text-white shadow-[0_20px_45px_-20px_rgba(99,102,241,0.8)] hover:bg-brand-400'
-                : 'cursor-not-allowed bg-slate-800 text-slate-600'
-            }`}
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            </svg>
-            {`Render ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`}
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Rendering" value={queueStats.activeJobs} accent="bg-brand-500/10 text-brand-200 border border-brand-500/30" />
-          <StatCard label="Queued" value={queueStats.pendingJobs} accent="bg-warning-500/10 text-warning-200 border border-warning-500/30" />
-          <StatCard label="Ready Today" value={queueStats.completedJobs} accent="bg-accent-500/10 text-accent-200 border border-accent-500/30" />
-        </div>
+      <header className="flex justify-center">
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={!canGenerate}
+          className={`flex items-center gap-2 rounded-3xl px-6 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+            canGenerate
+              ? 'bg-brand-500 text-white shadow-[0_20px_45px_-20px_rgba(99,102,241,0.8)] hover:bg-brand-400'
+              : 'cursor-not-allowed bg-slate-800 text-slate-600'
+          }`}
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          </svg>
+          {`Render ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`}
+        </button>
       </header>
 
-      <section>
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reference Frame</label>
+      {/* Input Section - Modular design for future expansion */}
+      <section className="space-y-3">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Input Media</label>
         <div
           className={`mt-3 flex flex-col rounded-3xl border-2 border-dashed ${
             isDragging ? 'border-brand-500/60 bg-brand-500/10' : 'border-slate-800 bg-slate-900/60'
@@ -213,7 +196,7 @@ export default function ControlPanel({
           </svg>
         </button>
         {showAdvanced && (
-          <div className="mt-4 space-y-4 text-sm text-slate-200">
+          <div className="mt-4 max-h-[300px] space-y-4 overflow-y-auto text-sm text-slate-200">
             <div className="flex gap-2">
               {(['768x768', '1024x1024'] as ResolutionOption[]).map((value) => (
                 <button
@@ -273,11 +256,3 @@ export default function ControlPanel({
   );
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent: string }) {
-  return (
-    <div className={`rounded-2xl px-3 py-3 text-center text-sm font-semibold ${accent}`}>
-      <p className="text-[0.65rem] uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-xl text-white">{value}</p>
-    </div>
-  );
-}
