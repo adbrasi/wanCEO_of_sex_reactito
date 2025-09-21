@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { GenerationHistory } from '@/lib/storage';
 
 type VideoPlayerVariant = 'inline' | 'modal';
@@ -12,7 +12,7 @@ interface VideoPlayerProps {
   className?: string;
 }
 
-export default function VideoPlayer({ item, onClose, variant = 'inline', className = '' }: VideoPlayerProps) {
+export default function VideoPlayer({ item, className = '' }: VideoPlayerProps) {
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);

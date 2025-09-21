@@ -32,7 +32,6 @@ export default function Home() {
   const [todayHistory, setTodayHistory] = useState<GenerationHistory[]>([]);
   const [yesterdayHistory, setYesterdayHistory] = useState<GenerationHistory[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
-  const [activeJobs, setActiveJobs] = useState(0);
   const activeJobsRef = useRef(0);
 
   const validFrameNumbers = useMemo(
@@ -54,15 +53,6 @@ export default function Home() {
     return combinedHistory[0];
   }, [combinedHistory, selectedHistoryId]);
 
-  const pendingJobs = useMemo(
-    () => combinedHistory.filter((item) => item.status === 'pending').length,
-    [combinedHistory]
-  );
-
-  const completedJobs = useMemo(
-    () => combinedHistory.filter((item) => item.status === 'completed').length,
-    [combinedHistory]
-  );
 
   const syncHistory = useCallback(() => {
     setTodayHistory(getTodayHistory());
@@ -160,7 +150,6 @@ export default function Home() {
       const thumbnail = await createThumbnail(imageBase64);
 
       activeJobsRef.current += batchSize;
-      setActiveJobs(activeJobsRef.current);
 
       const historyItems: Array<{ id: string; seed: number }> = [];
 
@@ -223,7 +212,6 @@ export default function Home() {
               isLikelyQueued
             ).then((result) => {
               activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
-              setActiveJobs(activeJobsRef.current);
 
               if (result.outputs && result.outputs.length > 0) {
                 const videoData = result.outputs[0].data;
@@ -248,7 +236,6 @@ export default function Home() {
           })
           .catch((error) => {
             activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
-            setActiveJobs(activeJobsRef.current);
             console.error('Generation failed:', error);
             updateHistoryItem(historyId, {
               status: 'failed',
@@ -279,14 +266,6 @@ export default function Home() {
     syncHistory();
   };
 
-  const queueStats = useMemo(
-    () => ({
-      activeJobs,
-      pendingJobs,
-      completedJobs
-    }),
-    [activeJobs, pendingJobs, completedJobs]
-  );
 
   const sections = useMemo(
     () => [
@@ -318,7 +297,6 @@ export default function Home() {
             onImageCleared={handleImageCleared}
             onGenerate={generateVideo}
             canGenerate={Boolean(selectedImage && prompt)}
-            queueStats={queueStats}
           />
 
           <HistoryWorkspace

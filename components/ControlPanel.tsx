@@ -4,12 +4,6 @@ import { useRef, useState, ChangeEvent, DragEvent } from 'react';
 
 type ResolutionOption = '768x768' | '1024x1024';
 
-type QueueStats = {
-  activeJobs: number;
-  pendingJobs: number;
-  completedJobs: number;
-};
-
 interface ControlPanelProps {
   prompt: string;
   negativePrompt: string;
@@ -28,7 +22,6 @@ interface ControlPanelProps {
   onImageCleared: () => void;
   onGenerate: () => void;
   canGenerate: boolean;
-  queueStats: QueueStats;
 }
 
 export default function ControlPanel({
@@ -48,8 +41,7 @@ export default function ControlPanel({
   onImageSelected,
   onImageCleared,
   onGenerate,
-  canGenerate,
-  queueStats
+  canGenerate
 }: ControlPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);

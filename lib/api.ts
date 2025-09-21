@@ -103,21 +103,30 @@ export async function submitJob(
     priority: 1
   };
 
-  const response = await fetch('/api/submit-job', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(submission),
-  });
+  try {
+    const response = await fetch('/api/submit-job', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(submission),
+    });
 
-  const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  if (!data.job_id) {
-    throw new Error(data.error || 'Failed to submit job - no job ID returned');
+    const data = await response.json();
+
+    if (!data.job_id) {
+      throw new Error(data.error || 'Failed to submit job - no job ID returned');
+    }
+
+    return data.job_id;
+  } catch (error) {
+    console.error('Error submitting job:', error);
+    throw error;
   }
-
-  return data.job_id;
 }
 
 export async function checkJobStatus(jobId: string): Promise<JobStatus> {
