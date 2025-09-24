@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_URL = 'https://cezarsaint--comfyui-saas-api2full-api.modal.run';
 
-function injectApiKeys(workflow: Record<string, any>): Record<string, any> {
+interface WorkflowNode {
+  class_type?: string;
+  inputs?: Record<string, unknown>;
+}
+
+function injectApiKeys(workflow: Record<string, unknown>): Record<string, unknown> {
   // Inject API keys into workflow nodes
   for (const nodeId in workflow) {
-    const node = workflow[nodeId];
+    const node = workflow[nodeId] as WorkflowNode;
 
     if (node && typeof node === 'object' && node.inputs) {
       // Inject Groq API key into GroqAPINode (node 113)

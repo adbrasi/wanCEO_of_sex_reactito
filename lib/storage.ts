@@ -13,7 +13,7 @@ export interface GenerationHistory {
   nodes_done?: number;
   nodes_total?: number;
   current_node?: string;
-  resolution: '768x768' | '1024x1024';
+  resolution: '768x768' | '1024x1024' | '1280x1280';
   frames: number;
 }
 

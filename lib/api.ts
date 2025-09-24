@@ -38,7 +38,12 @@ interface JobStatus {
   error_log_tail?: string[];
 }
 
-function fixWorkflowPaths(workflow: Record<string, any>, apiKeys?: Record<string, string>): Record<string, any> {
+interface WorkflowNode {
+  class_type?: string;
+  inputs?: Record<string, unknown>;
+}
+
+function fixWorkflowPaths(workflow: Record<string, unknown>, apiKeys?: Record<string, string>): Record<string, unknown> {
   // Path mappings for models and loras
   const modelPathFixes: Record<string, string> = {
     'Wan2_2-I2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors': 'I2V/Wan2_2-I2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors',
@@ -58,27 +63,30 @@ function fixWorkflowPaths(workflow: Record<string, any>, apiKeys?: Record<string
 
   // Iterate through all nodes in the workflow
   for (const nodeId in workflow) {
-    const node = workflow[nodeId];
+    const node = workflow[nodeId] as WorkflowNode;
 
     if (node && typeof node === 'object' && node.inputs) {
       // Fix WanVideoModelLoader nodes
       if (node.class_type === 'WanVideoModelLoader' && node.inputs.model) {
-        if (modelPathFixes[node.inputs.model]) {
-          node.inputs.model = modelPathFixes[node.inputs.model];
+        const model = node.inputs.model as string;
+        if (modelPathFixes[model]) {
+          node.inputs.model = modelPathFixes[model];
         }
       }
 
       // Fix WanVideoLoraSelect nodes
       if (node.class_type === 'WanVideoLoraSelect' && node.inputs.lora) {
-        if (loraPathFixes[node.inputs.lora]) {
-          node.inputs.lora = loraPathFixes[node.inputs.lora];
+        const lora = node.inputs.lora as string;
+        if (loraPathFixes[lora]) {
+          node.inputs.lora = loraPathFixes[lora];
         }
       }
 
       // Fix UpscaleModelLoader nodes
       if (node.class_type === 'UpscaleModelLoader' && node.inputs.model_name) {
-        if (upscaleModelFixes[node.inputs.model_name]) {
-          node.inputs.model_name = upscaleModelFixes[node.inputs.model_name];
+        const modelName = node.inputs.model_name as string;
+        if (upscaleModelFixes[modelName]) {
+          node.inputs.model_name = upscaleModelFixes[modelName];
         }
       }
 

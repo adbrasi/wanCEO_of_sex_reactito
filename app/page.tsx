@@ -39,7 +39,6 @@ export default function Home() {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const activeJobsRef = useRef(0);
 
-  const validFrameNumbers = [49, 57, 81];
 
   const combinedHistory = useMemo(
     () => [...todayHistory, ...yesterdayHistory],
@@ -177,7 +176,7 @@ export default function Home() {
           status: 'pending',
           timestamp: Date.now(),
           progress: 0,
-          resolution: `${resolution}x${resolution}`,
+          resolution: `${resolution}x${resolution}` as '768x768' | '1024x1024' | '1280x1280',
           frames
         };
 
@@ -231,14 +230,14 @@ export default function Home() {
 
               if (result.outputs && result.outputs.length > 0) {
                 // Log all outputs to see what's available
-                console.log('Available outputs:', result.outputs.map((o: any) => ({
+                console.log('Available outputs:', result.outputs.map((o: { filename?: string; type?: string; size_bytes?: number }) => ({
                   filename: o.filename,
                   type: o.type,
                   size: o.size_bytes
                 })));
 
                 // Priority order: AnimateDiff > last video > first video
-                let outputToUse = result.outputs.find((o: any) =>
+                let outputToUse = result.outputs.find((o: { filename?: string }) =>
                   o.filename && o.filename.includes('AnimateDiff')
                 );
 
