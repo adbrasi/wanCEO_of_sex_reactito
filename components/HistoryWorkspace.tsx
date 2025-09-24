@@ -41,7 +41,7 @@ export default function HistoryWorkspace({ item, onDeleteItem, onCancelJob }: Hi
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">Now Playing</p>
           <h1 className="text-2xl font-semibold text-white leading-tight">
-            {item.prompt || 'Untitled prompt'}
+            {item.prompt || `Generation #${item.id.split('-')[0].slice(-6)}`}
           </h1>
           <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-400">
             <span>{item.resolution}</span>
@@ -75,7 +75,7 @@ export default function HistoryWorkspace({ item, onDeleteItem, onCancelJob }: Hi
           <header className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
             <span>Prompt</span>
           </header>
-          <p className="whitespace-pre-line text-slate-200">{item.prompt}</p>
+          <p className="whitespace-pre-line text-slate-200">{item.prompt || 'AI-Generated (Assistant Mode)'}</p>
         </section>
         <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 text-sm text-slate-300">
           <header className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">

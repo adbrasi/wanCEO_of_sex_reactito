@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = 'https://cezarsaint--comfyui-saas-api-api.modal.run';
+const API_URL = 'https://cezarsaint--comfyui-saas-api2full-api.modal.run';
 
 export async function GET(
   request: NextRequest,

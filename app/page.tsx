@@ -23,9 +23,14 @@ const DEFAULT_NEGATIVE_PROMPT =
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [negativePrompt, setNegativePrompt] = useState(DEFAULT_NEGATIVE_PROMPT);
-  const [resolution, setResolution] = useState<'768x768' | '1024x1024'>('768x768');
-  const [frames, setFrames] = useState(17);
+  const [resolution, setResolution] = useState<768 | 1024 | 1280>(768);
+  const [frames, setFrames] = useState(49);
   const [batchSize, setBatchSize] = useState(1);
+  const [workflowType, setWorkflowType] = useState<'loop' | 'notloop'>('loop');
+  const [assistantHelp, setAssistantHelp] = useState(false);
+  const [concatText, setConcatText] = useState('');
+  const [llmHint, setLlmHint] = useState('');
+  const [animationMotion, setAnimationMotion] = useState<'None' | 'staticAnimation' | 'slowAnimation' | 'IntenseAnimation'>('None');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImageName, setSelectedImageName] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -34,10 +39,7 @@ export default function Home() {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const activeJobsRef = useRef(0);
 
-  const validFrameNumbers = useMemo(
-    () => Array.from({ length: 50 }, (_, i) => i * 4 + 1).filter((n) => n <= 200),
-    []
-  );
+  const validFrameNumbers = [49, 57, 81];
 
   const combinedHistory = useMemo(
     () => [...todayHistory, ...yesterdayHistory],
@@ -130,6 +132,11 @@ export default function Home() {
         const item = history.find((entry) => entry.jobId === jobId);
         if (item) {
           updateHistoryItem(item.id, { status: 'failed' });
+
+          // Auto-delete failed items after 20 seconds
+          setTimeout(() => {
+            deleteHistoryItem(item.id);
+          }, 20000);
         }
       } else {
         console.error(`Failed to cancel job ${jobId}: ${response.status}`);
@@ -140,8 +147,12 @@ export default function Home() {
   };
 
   const generateVideo = async () => {
-    if (!selectedImage || !prompt) {
-      alert('Please select an image and enter a prompt');
+    if (!selectedImage) {
+      alert('Please select an image');
+      return;
+    }
+    if (!assistantHelp && !prompt) {
+      alert('Please enter a prompt');
       return;
     }
 
@@ -166,7 +177,7 @@ export default function Home() {
           status: 'pending',
           timestamp: Date.now(),
           progress: 0,
-          resolution,
+          resolution: `${resolution}x${resolution}`,
           frames
         };
 
@@ -192,7 +203,12 @@ export default function Home() {
           selectedImage.name,
           seed,
           frames,
-          resolution
+          resolution,
+          workflowType,
+          assistantHelp,
+          concatText,
+          llmHint,
+          animationMotion
         )
           .then((jobId) => {
             updateHistoryItem(historyId, { jobId });
@@ -214,7 +230,26 @@ export default function Home() {
               activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
 
               if (result.outputs && result.outputs.length > 0) {
-                const videoData = result.outputs[0].data;
+                // Log all outputs to see what's available
+                console.log('Available outputs:', result.outputs.map((o: any) => ({
+                  filename: o.filename,
+                  type: o.type,
+                  size: o.size_bytes
+                })));
+
+                // Priority order: AnimateDiff > last video > first video
+                let outputToUse = result.outputs.find((o: any) =>
+                  o.filename && o.filename.includes('AnimateDiff')
+                );
+
+                if (!outputToUse) {
+                  // If no AnimateDiff found, get the last video file (usually the most processed)
+                  outputToUse = result.outputs[result.outputs.length - 1];
+                }
+
+                console.log('Selected output:', outputToUse.filename || 'unknown');
+
+                const videoData = outputToUse.data;
                 const videoBlob = new Blob(
                   [Uint8Array.from(atob(videoData), (c) => c.charCodeAt(0))],
                   { type: 'video/mp4' }
@@ -222,34 +257,35 @@ export default function Home() {
                 const videoUrl = URL.createObjectURL(videoBlob);
 
                 updateHistoryItem(historyId, {
-                  status: 'completed',
                   videoUrl,
-                  progress: 100
+                  status: 'completed',
+                  progress: 100,
+                  progress_value: undefined,
+                  progress_max: undefined,
+                  nodes_done: undefined,
+                  nodes_total: undefined,
+                  current_node: undefined
                 });
               } else {
-                updateHistoryItem(historyId, {
-                  status: 'failed',
-                  progress: 100
-                });
+                throw new Error('No video output in response');
               }
             });
           })
           .catch((error) => {
             activeJobsRef.current = Math.max(0, activeJobsRef.current - 1);
-            console.error('Generation failed:', error);
-            updateHistoryItem(historyId, {
-              status: 'failed',
-              progress: 0
-            });
+            console.error(`Error processing job for history ${historyId}:`, error);
+            updateHistoryItem(historyId, { status: 'failed' });
+
+            // Auto-delete failed items after 20 seconds
+            setTimeout(() => {
+              deleteHistoryItem(historyId);
+            }, 20000);
           });
 
         batchPromises.push(jobPromise);
       }
 
-      // Non-blocking execution - allows new requests while generating
-      Promise.allSettled(batchPromises).then(() => {
-        console.log('Batch generation complete');
-      });
+      await Promise.allSettled(batchPromises);
     } catch (error) {
       console.error('Error generating video:', error);
       alert('Failed to generate video. Please try again.');
@@ -285,7 +321,11 @@ export default function Home() {
             resolution={resolution}
             frames={frames}
             batchSize={batchSize}
-            validFrameNumbers={validFrameNumbers}
+            workflowType={workflowType}
+            assistantHelp={assistantHelp}
+            concatText={concatText}
+            llmHint={llmHint}
+            animationMotion={animationMotion}
             imagePreview={imagePreview}
             selectedImageName={selectedImageName}
             onPromptChange={setPrompt}
@@ -293,10 +333,15 @@ export default function Home() {
             onResolutionChange={setResolution}
             onFramesChange={setFrames}
             onBatchSizeChange={setBatchSize}
+            onWorkflowTypeChange={setWorkflowType}
+            onAssistantHelpChange={setAssistantHelp}
+            onConcatTextChange={setConcatText}
+            onLlmHintChange={setLlmHint}
+            onAnimationMotionChange={setAnimationMotion}
             onImageSelected={handleImageSelected}
             onImageCleared={handleImageCleared}
             onGenerate={generateVideo}
-            canGenerate={Boolean(selectedImage && prompt)}
+            canGenerate={Boolean(selectedImage && (prompt || assistantHelp))}
           />
 
           <HistoryWorkspace
@@ -307,11 +352,9 @@ export default function Home() {
 
           <HistoryBoard
             sections={sections}
-            onSelect={(item) => setSelectedHistoryId(item.id)}
             selectedId={selectedHistoryId}
-            onDelete={(id) => {
-              deleteHistoryItem(id);
-            }}
+            onSelect={(item) => setSelectedHistoryId(item.id)}
+            onDelete={deleteHistoryItem}
             onCancel={cancelJob}
           />
         </main>

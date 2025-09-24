@@ -2,7 +2,9 @@
 
 import { useRef, useState, ChangeEvent, DragEvent } from 'react';
 
-type ResolutionOption = '768x768' | '1024x1024';
+type ResolutionOption = 768 | 1024 | 1280;
+type WorkflowType = 'loop' | 'notloop';
+type AnimationMotion = 'None' | 'staticAnimation' | 'slowAnimation' | 'IntenseAnimation';
 
 interface ControlPanelProps {
   prompt: string;
@@ -10,7 +12,11 @@ interface ControlPanelProps {
   resolution: ResolutionOption;
   frames: number;
   batchSize: number;
-  validFrameNumbers: number[];
+  workflowType: WorkflowType;
+  assistantHelp: boolean;
+  concatText: string;
+  llmHint: string;
+  animationMotion: AnimationMotion;
   imagePreview: string;
   selectedImageName: string | null;
   onPromptChange: (value: string) => void;
@@ -18,6 +24,11 @@ interface ControlPanelProps {
   onResolutionChange: (value: ResolutionOption) => void;
   onFramesChange: (value: number) => void;
   onBatchSizeChange: (value: number) => void;
+  onWorkflowTypeChange: (value: WorkflowType) => void;
+  onAssistantHelpChange: (value: boolean) => void;
+  onConcatTextChange: (value: string) => void;
+  onLlmHintChange: (value: string) => void;
+  onAnimationMotionChange: (value: AnimationMotion) => void;
   onImageSelected: (file: File) => void;
   onImageCleared: () => void;
   onGenerate: () => void;
@@ -30,7 +41,11 @@ export default function ControlPanel({
   resolution,
   frames,
   batchSize,
-  validFrameNumbers,
+  workflowType,
+  assistantHelp,
+  concatText,
+  llmHint,
+  animationMotion,
   imagePreview,
   selectedImageName,
   onPromptChange,
@@ -38,6 +53,11 @@ export default function ControlPanel({
   onResolutionChange,
   onFramesChange,
   onBatchSizeChange,
+  onWorkflowTypeChange,
+  onAssistantHelpChange,
+  onConcatTextChange,
+  onLlmHintChange,
+  onAnimationMotionChange,
   onImageSelected,
   onImageCleared,
   onGenerate,
@@ -46,6 +66,10 @@ export default function ControlPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const validFrameNumbers = [49, 57, 81];
+  const resolutionOptions: ResolutionOption[] = [768, 1024, 1280];
+  const animationOptions: AnimationMotion[] = ['None', 'staticAnimation', 'slowAnimation', 'IntenseAnimation'];
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -91,6 +115,55 @@ export default function ControlPanel({
           {`Render ${batchSize > 1 ? `${batchSize} Videos` : 'Video'}`}
         </button>
       </header>
+
+      {/* Workflow Selection */}
+      <section className="space-y-3">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Workflow</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onWorkflowTypeChange('loop')}
+            className={`flex-1 rounded-2xl border px-3 py-2 font-medium transition ${
+              workflowType === 'loop'
+                ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+            }`}
+          >
+            Workflow 1 (Loop)
+          </button>
+          <button
+            type="button"
+            onClick={() => onWorkflowTypeChange('notloop')}
+            className={`flex-1 rounded-2xl border px-3 py-2 font-medium transition ${
+              workflowType === 'notloop'
+                ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+            }`}
+          >
+            Workflow 2 (Not Loop)
+          </button>
+        </div>
+      </section>
+
+      {/* Assistant Help Toggle */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Assistant Help</label>
+          <button
+            type="button"
+            onClick={() => onAssistantHelpChange(!assistantHelp)}
+            className={`relative h-6 w-11 rounded-full transition ${
+              assistantHelp ? 'bg-brand-500' : 'bg-slate-700'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                assistantHelp ? 'left-6' : 'left-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
 
       {/* Input Section - Modular design for future expansion */}
       <section className="space-y-3">
@@ -146,18 +219,75 @@ export default function ControlPanel({
       </section>
 
       <section className="space-y-4">
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Animation Prompt
-          </label>
-          <textarea
-            value={prompt}
-            onChange={(event) => onPromptChange(event.target.value)}
-            rows={4}
-            placeholder="Describe motion, camera, lighting..."
-            className="w-full resize-none rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200 shadow-inner focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          />
-        </div>
+        {/* Main prompt - only visible for non-LLM workflows */}
+        {!assistantHelp && (
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Animation Prompt
+            </label>
+            <textarea
+              value={prompt}
+              onChange={(event) => onPromptChange(event.target.value)}
+              rows={4}
+              placeholder="Describe motion, camera, lighting..."
+              className="w-full resize-none rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200 shadow-inner focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
+          </div>
+        )}
+
+        {/* LLM-specific inputs */}
+        {assistantHelp && (
+          <>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Concat Text
+              </label>
+              <input
+                value={concatText}
+                onChange={(event) => onConcatTextChange(event.target.value)}
+                placeholder="Additional text to concatenate to prompt..."
+                className="w-full rounded-3xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200 shadow-inner focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Prompt Generator Hint
+              </label>
+              <textarea
+                value={llmHint}
+                onChange={(event) => onLlmHintChange(event.target.value)}
+                rows={2}
+                placeholder="Hints for the AI prompt generator..."
+                className="w-full resize-none rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-200 shadow-inner focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Animation Motion
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {animationOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => onAnimationMotionChange(option)}
+                    className={`rounded-2xl border px-3 py-2 text-xs font-medium transition ${
+                      animationMotion === option
+                        ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+                    }`}
+                  >
+                    {option === 'None' ? 'None' : option.replace('Animation', '')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Negative Prompt
@@ -189,53 +319,70 @@ export default function ControlPanel({
         </button>
         {showAdvanced && (
           <div className="mt-4 max-h-[300px] space-y-4 overflow-y-auto text-sm text-slate-200">
-            <div className="flex gap-2">
-              {(['768x768', '1024x1024'] as ResolutionOption[]).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onResolutionChange(value)}
-                  className={`flex-1 rounded-2xl border px-3 py-2 font-medium transition ${
-                    resolution === value
-                      ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
-                  }`}
-                >
-                  {value.replace('x', '×')}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => onBatchSizeChange(value)}
-                  className={`rounded-2xl border px-2 py-2 font-semibold transition ${
-                    batchSize === value
-                      ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
-                  }`}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Frames (N×4 + 1)
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Resolution
               </label>
-              <select
-                value={frames}
-                onChange={(event) => onFramesChange(parseInt(event.target.value, 10))}
-                className="w-full rounded-2xl border border-slate-800 bg-slate-900/80 px-3 py-3 text-sm text-slate-200 focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              >
-                {validFrameNumbers.map((value) => (
-                  <option key={value} value={value}>
-                    {value} frames
-                  </option>
+              <div className="grid grid-cols-3 gap-2">
+                {resolutionOptions.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onResolutionChange(value)}
+                    className={`rounded-2xl border px-3 py-2 font-medium transition ${
+                      resolution === value
+                        ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+                    }`}
+                  >
+                    {value}
+                  </button>
                 ))}
-              </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Frames
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {validFrameNumbers.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onFramesChange(value)}
+                    className={`rounded-2xl border px-3 py-2 font-medium transition ${
+                      frames === value
+                        ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+                    }`}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Batch Size
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onBatchSizeChange(value)}
+                    className={`rounded-2xl border px-2 py-2 font-semibold transition ${
+                      batchSize === value
+                        ? 'border-brand-500/60 bg-brand-500/20 text-brand-100'
+                        : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-brand-500/40 hover:text-brand-100'
+                    }`}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -247,4 +394,3 @@ export default function ControlPanel({
     </aside>
   );
 }
-

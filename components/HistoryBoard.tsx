@@ -49,15 +49,12 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
                 return (
                   <div
                     key={item.id}
-                    className={`w-full rounded-3xl border border-slate-800 bg-slate-900/60 text-left transition transform hover:-translate-y-1 hover:border-brand-500/40 overflow-hidden ${
+                    className={`w-full rounded-3xl border border-slate-800 bg-slate-900/60 text-left transition transform hover:-translate-y-1 hover:border-brand-500/40 overflow-hidden cursor-pointer ${
                       isSelected ? 'border-brand-500/50 shadow-lg shadow-brand-500/20' : ''
                     }`}
+                    onClick={() => onSelect(item)}
                   >
-                    <button
-                      type="button"
-                      onClick={() => onSelect(item)}
-                      className="w-full p-4"
-                    >
+                    <div className="w-full p-4">
                       <div className="grid grid-cols-[80px_1fr] gap-3">
                         {/* Fixed thumbnail container */}
                         <div className="relative h-[60px] w-[80px] overflow-hidden rounded-xl border border-slate-800 bg-black">
@@ -79,7 +76,7 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
                           {/* Title and status badge */}
                           <div className="flex items-start gap-2 mb-1">
                             <p className="flex-1 truncate text-sm font-semibold text-slate-100 pr-2">
-                              {item.prompt || 'Untitled prompt'}
+                              {item.prompt || `Generation #${item.id.split('-')[0].slice(-6)}`}
                             </p>
                             <span className={`inline-flex flex-shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.6rem] font-semibold ${tone}`}>
                               <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -124,7 +121,7 @@ export default function HistoryBoard({ sections, onSelect, selectedId, onDelete,
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   </div>
                 );
               })}

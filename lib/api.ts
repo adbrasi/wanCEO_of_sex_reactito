@@ -38,9 +38,70 @@ interface JobStatus {
   error_log_tail?: string[];
 }
 
-export async function loadWorkflow() {
-  const response = await fetch('/workflows/wan22Smoothloop_fixed.json');
-  return response.json();
+function fixWorkflowPaths(workflow: Record<string, any>, apiKeys?: Record<string, string>): Record<string, any> {
+  // Path mappings for models and loras
+  const modelPathFixes: Record<string, string> = {
+    'Wan2_2-I2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors': 'I2V/Wan2_2-I2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors',
+    'Wan2_2-I2V-A14B-LOW_fp8_e5m2_scaled_KJ.safetensors': 'I2V/Wan2_2-I2V-A14B-LOW_fp8_e5m2_scaled_KJ.safetensors',
+  };
+
+  const loraPathFixes: Record<string, string> = {
+    'Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors': 'Wan22-Lightning/Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors',
+    'Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors': 'Wan22-Lightning/Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors',
+    'ultimate_sex_000005500_high_noise.safetensors': 'ultimate_sex_000006500_high_noise.safetensors',
+    'ultimate_sex_000005500_low_noise.safetensors': 'ultimate_sex_000006500_low_noise.safetensors',
+  };
+
+  const upscaleModelFixes: Record<string, string> = {
+    '2x-AnimeSharpV2_MoSR_Soft.pth': 'anime/2x-AnimeSharpV2_MoSR_Soft.pth',
+  };
+
+  // Iterate through all nodes in the workflow
+  for (const nodeId in workflow) {
+    const node = workflow[nodeId];
+
+    if (node && typeof node === 'object' && node.inputs) {
+      // Fix WanVideoModelLoader nodes
+      if (node.class_type === 'WanVideoModelLoader' && node.inputs.model) {
+        if (modelPathFixes[node.inputs.model]) {
+          node.inputs.model = modelPathFixes[node.inputs.model];
+        }
+      }
+
+      // Fix WanVideoLoraSelect nodes
+      if (node.class_type === 'WanVideoLoraSelect' && node.inputs.lora) {
+        if (loraPathFixes[node.inputs.lora]) {
+          node.inputs.lora = loraPathFixes[node.inputs.lora];
+        }
+      }
+
+      // Fix UpscaleModelLoader nodes
+      if (node.class_type === 'UpscaleModelLoader' && node.inputs.model_name) {
+        if (upscaleModelFixes[node.inputs.model_name]) {
+          node.inputs.model_name = upscaleModelFixes[node.inputs.model_name];
+        }
+      }
+
+      // Inject API keys into GroqAPINode (node 113)
+      if (node.class_type === 'GroqAPINode' && node.inputs) {
+        if (node.inputs.api_key === 'YOUR_GROQ_API_KEY' && apiKeys?.groqApiKey) {
+          node.inputs.api_key = apiKeys.groqApiKey;
+        }
+      }
+    }
+  }
+
+  return workflow;
+}
+
+export async function loadWorkflow(workflowName: string) {
+  const response = await fetch(`/workflows/${workflowName}`);
+  let workflow = await response.json();
+
+  // Auto-fix model and lora paths (API keys will be injected server-side)
+  workflow = fixWorkflowPaths(workflow);
+
+  return workflow;
 }
 
 export async function submitJob(
@@ -50,19 +111,27 @@ export async function submitJob(
   imageName: string,
   seed: number,
   frames: number = 49,
-  resolution: string = '768x768'
+  resolution: number = 768,
+  workflowType: 'loop' | 'notloop' = 'loop',
+  assistantHelp: boolean = false,
+  concatText?: string,
+  llmHint?: string,
+  animationMotion: 'None' | 'staticAnimation' | 'slowAnimation' | 'IntenseAnimation' = 'None'
 ): Promise<string> {
-  const workflow = await loadWorkflow();
+  // Determine workflow filename
+  let workflowName: string;
+  if (workflowType === 'loop') {
+    workflowName = assistantHelp ? 'loop_Full_api_wf_kijalito.json' : 'loop_Full_withhouLLM_api_wf_kijalito.json';
+  } else {
+    workflowName = assistantHelp ? 'NOTloop_Full_api_wf_kijalito.json' : 'NOTloop_Full_withhouLLM_api_wf_kijalito.json';
+  }
 
-  // Parse resolution
-  const [width, height] = resolution.split('x').map(n => parseInt(n));
+  const workflow = await loadWorkflow(workflowName);
 
-  // Update workflow with seed for all seed nodes
-  // Node 27 has the main seed
+  // Update workflow with seed (node 27 and possibly others)
   if (workflow['27'] && workflow['27'].inputs) {
     workflow['27'].inputs.seed = seed;
   }
-  // Node 90 also has a seed
   if (workflow['90'] && workflow['90'].inputs) {
     workflow['90'].inputs.seed = seed;
   }
@@ -72,31 +141,84 @@ export async function submitJob(
     workflow['89'].inputs.num_frames = frames;
   }
 
-  // Update resolution in node 68 (ImageResize)
+  // Update resolution in node 129
+  if (workflow['129'] && workflow['129'].inputs) {
+    workflow['129'].inputs.value = resolution;
+  }
+
+  // Update resolution in node 68 if it exists (for ImageResize compatibility)
   if (workflow['68'] && workflow['68'].inputs) {
-    workflow['68'].inputs.width = width;
-    workflow['68'].inputs.height = height;
+    workflow['68'].inputs.width = resolution;
+    workflow['68'].inputs.height = resolution;
+  }
+
+  // Update image filename in node 107
+  if (workflow['107'] && workflow['107'].inputs) {
+    workflow['107'].inputs.image = 'example.png';
+  }
+
+  // Handle LLM-specific inputs
+  if (assistantHelp) {
+    // Node 131: concat text
+    if (workflow['131'] && workflow['131'].inputs && concatText) {
+      workflow['131'].inputs.text = concatText;
+    }
+
+    // Node 134: LLM hint + animation motion
+    if (workflow['134'] && workflow['134'].inputs) {
+      let llmText = llmHint || '';
+      if (animationMotion !== 'None') {
+        llmText = animationMotion + (llmText ? ', ' + llmText : '');
+      }
+      workflow['134'].inputs.text = llmText;
+    }
+
+    // Set strength for nodes 99 and 100 if animation motion is not None
+    if (animationMotion !== 'None') {
+      if (workflow['99'] && workflow['99'].inputs) {
+        workflow['99'].inputs.strength = 0.9;
+      }
+      if (workflow['100'] && workflow['100'].inputs) {
+        workflow['100'].inputs.strength = 0.9;
+      }
+    }
+  } else {
+    // For workflows without LLM, node 134 is the main prompt input
+    if (workflow['134'] && workflow['134'].inputs) {
+      workflow['134'].inputs.text = prompt;
+    }
+  }
+
+  // Prepare inputs array
+  const inputs: WorkflowInput[] = [];
+  
+  // Only add prompt inputs for non-LLM workflows or when we have a prompt to send
+  // For LLM workflows, the positive_prompt comes from the LLM output (node 121), not from user input
+  if (!assistantHelp && workflow['16']) {
+    inputs.push({
+      node: "16",
+      field: "positive_prompt",
+      value: prompt,
+      type: "raw"
+    });
+  }
+  
+  // Negative prompt is always sent
+  if (workflow['16']) {
+    inputs.push({
+      node: "16", 
+      field: "negative_prompt",
+      value: negativePrompt,
+      type: "raw"
+    });
   }
 
   const submission: JobSubmission = {
     workflow,
-    inputs: [
-      {
-        node: "16",
-        field: "positive_prompt",
-        value: prompt,
-        type: "raw"
-      },
-      {
-        node: "16",
-        field: "negative_prompt",
-        value: negativePrompt,
-        type: "raw"
-      }
-    ],
+    inputs,
     media: [
       {
-        name: "image.jpg", // Always use image.jpg as the workflow expects
+        name: "example.png", // Changed to match node 107 expectation
         data: imageBase64
       }
     ],

@@ -1,0 +1,771 @@
+{
+  "11": {
+    "inputs": {
+      "model_name": "umt5-xxl-enc-bf16.safetensors",
+      "precision": "bf16",
+      "load_device": "offload_device",
+      "quantization": "disabled"
+    },
+    "class_type": "LoadWanVideoT5TextEncoder",
+    "_meta": {
+      "title": "WanVideo T5 Text Encoder Loader"
+    }
+  },
+  "16": {
+    "inputs": {
+      "positive_prompt": [
+        "121",
+        0
+      ],
+      "negative_prompt": "低质量，糟糕的物理，不自然的运动，僵硬的动画，机械动作，断续运动，不流畅，静止不动，冻结帧，没有运动，错误的解剖学，变形的身体，扭曲的四肢，多余的肢体，缺失的肢体，糟糕的手部，额外的手指，融合的手指，错误的关节，不协调的动作，闪烁，抖动，模糊，失焦，像素化，压缩伪影，水印，文字，错误的眼睛，交叉眼，不对称的脸，丑陋，毁容，重复元素，克隆，不一致的外观，形态变化，衣服闪烁，背景不稳定，漂浮的元素，断开的肢体，错误的透视，糟糕的构图，业余动画，低帧率，卡顿,black border, black background.",
+      "force_offload": true,
+      "use_disk_cache": false,
+      "device": "gpu",
+      "t5": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "WanVideoTextEncode",
+    "_meta": {
+      "title": "WanVideo TextEncode"
+    }
+  },
+  "22": {
+    "inputs": {
+      "model": "Wan2_2-I2V-A14B-HIGH_fp8_e5m2_scaled_KJ.safetensors",
+      "base_precision": "fp16_fast",
+      "quantization": "fp8_e5m2_scaled",
+      "load_device": "offload_device",
+      "attention_mode": "sageattn",
+      "rms_norm_function": "default",
+      "lora": [
+        "56",
+        0
+      ]
+    },
+    "class_type": "WanVideoModelLoader",
+    "_meta": {
+      "title": "WanVideo Model Loader"
+    }
+  },
+  "27": {
+    "inputs": {
+      "steps": [
+        "94",
+        0
+      ],
+      "cfg": 1,
+      "shift": 5,
+      "seed": 528179312609448,
+      "force_offload": true,
+      "scheduler": "dpm++_sde",
+      "riflex_freq_index": 0,
+      "denoise_strength": 1,
+      "batched_cfg": false,
+      "rope_function": "comfy",
+      "start_step": 0,
+      "end_step": [
+        "91",
+        0
+      ],
+      "add_noise_to_samples": "",
+      "model": [
+        "22",
+        0
+      ],
+      "image_embeds": [
+        "89",
+        0
+      ],
+      "text_embeds": [
+        "16",
+        0
+      ],
+      "feta_args": [
+        "98",
+        0
+      ]
+    },
+    "class_type": "WanVideoSampler",
+    "_meta": {
+      "title": "WanVideo Sampler"
+    }
+  },
+  "28": {
+    "inputs": {
+      "enable_vae_tiling": false,
+      "tile_x": 272,
+      "tile_y": 272,
+      "tile_stride_x": 144,
+      "tile_stride_y": 128,
+      "normalization": "default",
+      "vae": [
+        "38",
+        0
+      ],
+      "samples": [
+        "90",
+        0
+      ]
+    },
+    "class_type": "WanVideoDecode",
+    "_meta": {
+      "title": "WanVideo Decode"
+    }
+  },
+  "38": {
+    "inputs": {
+      "model_name": "Wan2_1_VAE_fp32.safetensors",
+      "precision": "fp32"
+    },
+    "class_type": "WanVideoVAELoader",
+    "_meta": {
+      "title": "WanVideo VAE Loader"
+    }
+  },
+  "56": {
+    "inputs": {
+      "lora": "Wan2.2-Lightning_I2V-A14B-4steps-lora_HIGH_fp16.safetensors",
+      "strength": 0.8,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "99",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "60": {
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "WanVideo2_2_I2V",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "68": {
+    "inputs": {
+      "width": [
+        "129",
+        0
+      ],
+      "height": [
+        "129",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "keep_proportion": "resize",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 32,
+      "device": "cpu",
+      "image": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "ImageResizeKJv2",
+    "_meta": {
+      "title": "Resize Image v2"
+    }
+  },
+  "71": {
+    "inputs": {
+      "model": "Wan2_2-I2V-A14B-LOW_fp8_e5m2_scaled_KJ.safetensors",
+      "base_precision": "fp16_fast",
+      "quantization": "fp8_e5m2_scaled",
+      "load_device": "offload_device",
+      "attention_mode": "sageattn",
+      "rms_norm_function": "default",
+      "lora": [
+        "97",
+        0
+      ]
+    },
+    "class_type": "WanVideoModelLoader",
+    "_meta": {
+      "title": "WanVideo Model Loader"
+    }
+  },
+  "89": {
+    "inputs": {
+      "width": [
+        "68",
+        1
+      ],
+      "height": [
+        "68",
+        2
+      ],
+      "num_frames": 49,
+      "noise_aug_strength": 0,
+      "start_latent_strength": 1,
+      "end_latent_strength": 1,
+      "force_offload": true,
+      "fun_or_fl2v_model": false,
+      "tiled_vae": false,
+      "vae": [
+        "38",
+        0
+      ],
+      "start_image": [
+        "68",
+        0
+      ],
+      "end_image": [
+        "68",
+        0
+      ]
+    },
+    "class_type": "WanVideoImageToVideoEncode",
+    "_meta": {
+      "title": "WanVideo ImageToVideo Encode"
+    }
+  },
+  "90": {
+    "inputs": {
+      "steps": [
+        "94",
+        0
+      ],
+      "cfg": 1,
+      "shift": 5,
+      "seed": 151301216682087,
+      "force_offload": true,
+      "scheduler": "dpm++_sde",
+      "riflex_freq_index": 0,
+      "denoise_strength": 1,
+      "batched_cfg": false,
+      "rope_function": "comfy",
+      "start_step": [
+        "91",
+        0
+      ],
+      "end_step": -1,
+      "add_noise_to_samples": "",
+      "model": [
+        "71",
+        0
+      ],
+      "image_embeds": [
+        "89",
+        0
+      ],
+      "text_embeds": [
+        "16",
+        0
+      ],
+      "samples": [
+        "27",
+        0
+      ],
+      "feta_args": [
+        "98",
+        0
+      ]
+    },
+    "class_type": "WanVideoSampler",
+    "_meta": {
+      "title": "WanVideo Sampler"
+    }
+  },
+  "91": {
+    "inputs": {
+      "value": 3
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "Split_step"
+    }
+  },
+  "94": {
+    "inputs": {
+      "value": 6
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "97": {
+    "inputs": {
+      "lora": "Wan2.2-Lightning_I2V-A14B-4steps-lora_LOW_fp16.safetensors",
+      "strength": 0.8,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "100",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "98": {
+    "inputs": {
+      "weight": 2,
+      "start_percent": 0,
+      "end_percent": 1
+    },
+    "class_type": "WanVideoEnhanceAVideo",
+    "_meta": {
+      "title": "WanVideo Enhance-A-Video"
+    }
+  },
+  "99": {
+    "inputs": {
+      "lora": "smoothloop_000002100_high_noise.safetensors",
+      "strength": 0,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "105",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "100": {
+    "inputs": {
+      "lora": "smoothloop_000002100_low_noise.safetensors",
+      "strength": 0,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "106",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "104": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": false,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "151",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "105": {
+    "inputs": {
+      "lora": "ultimate_sex_000005500_high_noise.safetensors",
+      "strength": 1,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "123",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "106": {
+    "inputs": {
+      "lora": "ultimate_sex_000005500_low_noise.safetensors",
+      "strength": 1,
+      "low_mem_load": false,
+      "merge_loras": false,
+      "prev_lora": [
+        "122",
+        0
+      ]
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "107": {
+    "inputs": {
+      "image": "example.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "108": {
+    "inputs": {
+      "text": "Analyze these descriptions and create a nsfw video prompt:\n\nWD14 Tags: {wd14_block}\nFLOR Description: {flor_block}\nUser:{user_toPROMPt}\n\nINSTRUCTIONS:\n1. Extract character appearance, clothing, and accessories from both sources\n2. Identify the environment/background setting\n3. Determine if anime or 3D style based on descriptions\n4. Create prompt following the exact template structure and instructions of the system prompt.\n5. Emphasize physics, fluid motion, natural movement\n7. Place environment details and character details at the end\n\nOutput 80-100 words EXACTLY in JSON format.\n\n<Follow the system prompt>"
+    },
+    "class_type": "CR Text",
+    "_meta": {
+      "title": "🔤 CR Text"
+    }
+  },
+  "109": {
+    "inputs": {
+      "string": [
+        "108",
+        0
+      ],
+      "find": "{wd14_block}",
+      "replace": [
+        "111",
+        0
+      ]
+    },
+    "class_type": "StringReplace",
+    "_meta": {
+      "title": "Replace"
+    }
+  },
+  "110": {
+    "inputs": {
+      "string": [
+        "133",
+        0
+      ],
+      "find": "{flor_block}",
+      "replace": [
+        "118",
+        2
+      ]
+    },
+    "class_type": "StringReplace",
+    "_meta": {
+      "title": "Replace"
+    }
+  },
+  "111": {
+    "inputs": {
+      "model": "wd-v1-4-moat-tagger-v2",
+      "threshold": 0.35,
+      "character_threshold": 0.85,
+      "replace_underscore": false,
+      "trailing_comma": false,
+      "exclude_tags": "",
+      "tags": "1girl, long_hair, breasts, looking_at_viewer, blush, smile, thighhighs, 1boy, navel, nipples, green_eyes, pink_hair, hetero, sweat, boots, lying, penis, pussy, solo_focus, dark_skin, spread_legs, cum, on_back, armpits, grin, huge_breasts, arms_up, uncensored, anus, cum_in_pussy, white_footwear, dark-skinned_male, cum_on_body, grass, arms_behind_head, after_sex, veins, veiny_penis",
+      "image": [
+        "68",
+        0
+      ]
+    },
+    "class_type": "WD14Tagger|pysssss",
+    "_meta": {
+      "title": "WD14 Tagger 🐍"
+    }
+  },
+  "113": {
+    "inputs": {
+      "api_provider": "groq",
+      "api_key": "YOUR_GROQ_API_KEY",
+      "system_prompt": "You are **CaptionRefinerNSFW**, an expert at fusing multiple auto-generated captions for the same NSFW video into a single, accurate, human-quality caption in JSON format. Follow these rules strictly:\n1) Read all provided captions (WD14, FLOR). Resolve contradictions by preferring details corroborated by both sources. If only one source mentions a detail, include it only if it is plausible and consistent with the rest.\n2) Write with precise, descriptive language that would help a human understand the video content. Avoid over-claiming or unsubstantiated details.\n3) Use a single flowing paragraph without lists or headings.\n4) Keep proper nouns and domain-specific terms when correct. Fix any grammar issues.\nWD14 provides three pieces of information from the same video, all in booru tag format:\n- Frame 1: general video description\n- Frame 2: extra level 1 tag\n- Frame 3: extra level 2 tag\nFLOR captions are in natural language and help with overall understanding. WD14 captions provide deeper insights, especially on sexual poses and scene details. Combine both to create one highly accurate, creative description that makes sense as a whole. WD14 often includes more details about sexual poses and the type of sexual activity.\nCore Formatting Rules:\n1. Length Requirements\n- Target length: 80-100 words exactly (count every word precisely and adjust to meet this range)\n- Never exceed 100 words\n- Minimum: 80 words\n2. Punctuation Rules\n- Use simple punctuation only: periods, commas, and basic connectors. Avoid semicolons or complex structures.\n3. Basic Structure Formula\nStart with the animation prefix if applicable. Immediately follow with comma-separated key NSFW specifications: [Sexual Pose], [Sex Type], [Relevant Body Parts such as penis, vagina, anus, breasts]. Then include [Style of the Video] in the comma-separated list if it fits naturally. Proceed directly into a flowing descriptive sentence with [Subject + Subject Description] + [Actions and Motions]. End with [Scene Description] + [Background/Environment Details].\n- Sexual pose: Typically from WD14, such as \"missionary\", \"full nelson\", \"prone bone\", \"doggy style\".\n- Sex type: Specify if the video involves \"anal\", \"vaginal\", \"oral\", \"masturbation\", \"handjob\", \"titfuck\".\n- Relevant body parts: List key ones involved, capitalizing the first letter, like \"Penis\", \"Vagina\", highlighting details like veins or ejaculation in the description.\n- Style: \"real life\", \"cartoon\", \"anime style\", or \"3D animation\".\n- Include in subject description: appearance, clothing, emotional state (shown through actions or expressions).\n- Use specific descriptors naturally, e.g., \"battle-worn samurai\" instead of \"samurai\".\n- For humans: Mention ethnicity or appearance naturally, e.g., \"adult East Asian woman\", \"elderly Caucasian man\". Always imply adult subjects.\n- Position and posture: Specify how the subject is positioned.\n- Lighting conditions: Time of day, light source, quality (soft, hard, volumetric).\n- Background elements: Describe from near to far, at the very end.\n- Weather or atmosphere if relevant, at the end.\n- Color palette and mood, integrated where fitting but concentrated toward the end.\nAnimation Classification Rule\nThe user will specify the animation type in the input: StaticAnimation, SlowAnimation, or IntenseAnimation.\n- If IntenseAnimation: Start the output paragraph with: “IntenseAnimation, a dynamic and smooth animation with a lot of movement, looping.”\n- If SlowAnimation: Start with: “SlowAnimation, a smooth animation with little movement, looping.”\n- If StaticAnimation: Start with: “StaticAnimation, an animation that is almost motionless with minimal, subtle movements, looping.”\nThis prefix must always be at the very beginning of the output paragraph.\nThe focus is on the NSFW scene; all videos are NSFW involving consenting adults. Describe the character's expression, relevant body parts (vagina, anus, breasts, penis), highlighting details like veins if present, and whether there is ejaculation. Be creative and intelligent in descriptions.\nENVIRONMENT DETAILS (FROM INPUT):\n- Place at the very END of the paragraph.\n- If outdoor: Mention sky, ground, weather.\n- If indoor: Mention walls, lighting, room type.\n- Include time indicators: day/night, lighting quality.\nMotion Description Guidelines:\n- Describe primary subject motion first (using action verbs like \"sprints\", \"glides\", \"erupts\" instead of \"moves\").\n- Then secondary elements.\n- End with environmental motion.\n- Effective motion words:\n  - Subtle: drifts, sways, trembles, shifts\n  - Moderate: walks, turns, reaches, gestures\n  - Dynamic: leaps, crashes, explodes, whips\n  - Continuous: flowing, rippling, pulsing, breathing\n- Front-load important elements: Place critical subject and action information early.\n- Mention physics and fluid dynamics where relevant (e.g., in sexual actions).\nTECHNICAL REQUIREMENTS:\n- Word count: 80-100 words exactly.\n- Format: Single flowing paragraph.\n- Tense: Present tense throughout.\n- User info is more important than WD14 and FLOR.\n- No lists, bullets, or line breaks.\n- Sex first, character descriptions after.\n- Output as JSON: {\"output_1\": \"your complete prompt\"}\nAVOID COMPLETELY:\n- Any references to camera shots, angles, or lenses.\n- Describing characters as already moving in the source material.\n- Specific dance names (e.g., ballet, hip-hop).\n- Music, audio references, dialogue, or sound effects.\n- Phrases like \"high quality\", \"4K\", or \"masterpiece\" as standalone (integrate naturally if needed, but avoid).\n- Abstract emotion descriptions: Show through actions or expressions.\n- Brackets, parentheses, or special formatting.\n- Any content implying non-adult or non-consensual scenarios.\nENHANCEMENT CHECKLIST:\n☐ Motion/sex description comes FIRST after specifications.\n☐ Physics and fluid dynamics mentioned where applicable.\n☐ Background/environment mentioned at END.\n☐ Style (anime/3D/etc.) specified early.\n☐ Exactly 80-100 words.",
+      "user_prompt": [
+        "110",
+        0
+      ],
+      "model": "deepseek-r1-distill-llama-70b",
+      "custom_parameters": "{}",
+      "timeout": 60,
+      "max_retries": 3
+    },
+    "class_type": "DualAPILLMNode",
+    "_meta": {
+      "title": "Groq/OpenRouter)"
+    }
+  },
+  "118": {
+    "inputs": {
+      "text_input": "",
+      "task": "prompt_gen_mixed_caption_plus",
+      "fill_mask": true,
+      "keep_model_loaded": false,
+      "max_new_tokens": 1024,
+      "num_beams": 3,
+      "do_sample": true,
+      "output_mask_select": "",
+      "seed": 477634214967580,
+      "image": [
+        "68",
+        0
+      ],
+      "florence2_model": [
+        "119",
+        0
+      ]
+    },
+    "class_type": "Florence2Run",
+    "_meta": {
+      "title": "Florence2Run"
+    }
+  },
+  "119": {
+    "inputs": {
+      "model": "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+      "precision": "fp16",
+      "attention": "sdpa",
+      "convert_to_safetensors": false
+    },
+    "class_type": "DownloadAndLoadFlorence2Model",
+    "_meta": {
+      "title": "DownloadAndLoadFlorence2Model"
+    }
+  },
+  "121": {
+    "inputs": {
+      "string_a": [
+        "131",
+        0
+      ],
+      "string_b": [
+        "113",
+        0
+      ],
+      "delimiter": ""
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
+    }
+  },
+  "122": {
+    "inputs": {
+      "lora": "NSFW-22-L-e8.safetensors",
+      "strength": 0.5,
+      "low_mem_load": false,
+      "merge_loras": false
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "123": {
+    "inputs": {
+      "lora": "NSFW-22-H-e8.safetensors",
+      "strength": 0.5,
+      "low_mem_load": false,
+      "merge_loras": false
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "124": {
+    "inputs": {
+      "model": "gimmvfi_r_arb_lpips_fp32.safetensors",
+      "precision": "fp16",
+      "torch_compile": false
+    },
+    "class_type": "DownloadAndLoadGIMMVFIModel",
+    "_meta": {
+      "title": "(Down)Load GIMMVFI Model"
+    }
+  },
+  "129": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "INTConstant",
+    "_meta": {
+      "title": "video resolution"
+    }
+  },
+  "131": {
+    "inputs": {
+      "text": "text here"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "add info to prompt"
+    }
+  },
+  "133": {
+    "inputs": {
+      "string": [
+        "109",
+        0
+      ],
+      "find": "{user_toPROMPt}",
+      "replace": [
+        "134",
+        0
+      ]
+    },
+    "class_type": "StringReplace",
+    "_meta": {
+      "title": "Replace"
+    }
+  },
+  "134": {
+    "inputs": {
+      "text": "IntenseAnimation, anime,pov male, abs,"
+    },
+    "class_type": "Text Multiline",
+    "_meta": {
+      "title": "add info to assistent"
+    }
+  },
+  "137": {
+    "inputs": {
+      "max_batch_size": 0,
+      "tile_size": 0,
+      "channels_last": false,
+      "precision": "fp32",
+      "upscale_model": [
+        "138",
+        0
+      ],
+      "image": [
+        "147",
+        0
+      ]
+    },
+    "class_type": "UpscaleWithModelAdvanced",
+    "_meta": {
+      "title": "🐇 Upscale w/ Model (Advanced)"
+    }
+  },
+  "138": {
+    "inputs": {
+      "model_name": "2x-AnimeSharpV2_MoSR_Soft.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load Upscale Model"
+    }
+  },
+  "139": {
+    "inputs": {
+      "anything": [
+        "137",
+        0
+      ]
+    },
+    "class_type": "Bjornulf_FreeVRAM",
+    "_meta": {
+      "title": "🧹 Free VRAM hack"
+    }
+  },
+  "147": {
+    "inputs": {
+      "method": "mkl",
+      "strength": 1,
+      "multithread": true,
+      "image_ref": [
+        "149",
+        0
+      ],
+      "image_target": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "ColorMatch",
+    "_meta": {
+      "title": "Color Match"
+    }
+  },
+  "149": {
+    "inputs": {
+      "indexes": "16",
+      "images": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "GetImagesFromBatchIndexed",
+    "_meta": {
+      "title": "Get Images From Batch Indexed"
+    }
+  },
+  "150": {
+    "inputs": {
+      "ckpt_name": "rife49.pth",
+      "scale_factor": 1,
+      "ensemble": true,
+      "multiplier": 2,
+      "use_first_two": true,
+      "use_last_two": true,
+      "use_global_median": false,
+      "calibrate_metric": "MSE",
+      "calibrate_iters": 12,
+      "t_min": 0,
+      "t_max": 0.96,
+      "auto_tmax": false,
+      "t_cap": 0.995,
+      "full_clip": [
+        "139",
+        0
+      ]
+    },
+    "class_type": "RIFE_SeamTimingAnalyzer",
+    "_meta": {
+      "title": "🐇 RIFE Seam Timing Analyzer"
+    }
+  },
+  "151": {
+    "inputs": {
+      "ckpt_name": "rife49.pth",
+      "multiplier": [
+        "150",
+        1
+      ],
+      "t_mode": "linear",
+      "t_gamma": 1,
+      "t_min": 0,
+      "t_max": 1,
+      "scale_factor": 1,
+      "ensemble": true,
+      "clear_cache_after_n_frames": 10,
+      "custom_t_list_csv": [
+        "150",
+        0
+      ],
+      "frames": [
+        "139",
+        0
+      ]
+    },
+    "class_type": "RIFE_VFI_Advanced",
+    "_meta": {
+      "title": "🐇 RIFE VFI Custom Timing"
+    }
+  }
+}
